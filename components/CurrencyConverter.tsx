@@ -34,8 +34,8 @@ export const CurrencyConverter: React.FC = () => {
   const uniqueCurrencies = [...new Map(SUPPORTED_COUNTRIES.map(item => [item['currency'], item])).values()];
 
   return (
-    <div className="bg-white shadow-md rounded-lg">
-      <div className="p-6 border-b border-slate-200">
+    <div className="bg-slate-200 rounded-2xl shadow-digital">
+      <div className="p-6 border-b border-slate-300">
         <h2 className="text-xl font-bold text-slate-800">Quick Currency Converter</h2>
       </div>
       <div className="p-6">
@@ -43,12 +43,12 @@ export const CurrencyConverter: React.FC = () => {
             {/* From Input */}
             <div className="md:col-span-2">
                 <label htmlFor="from-amount" className="block text-sm font-medium text-slate-700 mb-1">From</label>
-                <div className="flex">
+                <div className="flex rounded-md shadow-digital-inset">
                     <select 
                         id="from-currency" 
                         value={fromCurrency} 
                         onChange={(e) => setFromCurrency(e.target.value)}
-                        className="rounded-l-md border-r-0 border-slate-300 shadow-sm focus:border-primary focus:ring-primary z-10 bg-slate-50"
+                        className="p-3 border-0 rounded-l-md focus:ring-2 focus:ring-primary-400 z-10 bg-transparent"
                         aria-label="From currency"
                     >
                         {uniqueCurrencies.map(c => <option key={c.currency} value={c.currency}>{c.currency}</option>)}
@@ -58,7 +58,7 @@ export const CurrencyConverter: React.FC = () => {
                         id="from-amount" 
                         value={amount} 
                         onChange={(e) => setAmount(e.target.value)} 
-                        className="block w-full rounded-r-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary pl-4"
+                        className="block w-full border-0 p-3 rounded-r-md focus:ring-2 focus:ring-primary-400 bg-transparent"
                         placeholder="0.00"
                     />
                 </div>
@@ -68,7 +68,7 @@ export const CurrencyConverter: React.FC = () => {
             <div className="flex justify-center">
                 <button 
                     onClick={handleSwapCurrencies}
-                    className="p-2 rounded-full text-slate-500 hover:bg-slate-100 transition-colors"
+                    className="p-3 rounded-full text-slate-500 transition-shadow shadow-digital active:shadow-digital-inset"
                     aria-label="Swap currencies"
                 >
                     <ArrowsRightLeftIcon className="w-5 h-5" />
@@ -78,12 +78,12 @@ export const CurrencyConverter: React.FC = () => {
             {/* To Input (Result) */}
             <div className="md:col-span-2">
                 <label htmlFor="to-amount" className="block text-sm font-medium text-slate-700 mb-1">To</label>
-                 <div className="flex">
+                 <div className="flex rounded-md shadow-digital-inset">
                     <select 
                         id="to-currency" 
                         value={toCurrency} 
                         onChange={(e) => setToCurrency(e.target.value)}
-                        className="rounded-l-md border-r-0 border-slate-300 shadow-sm focus:border-primary focus:ring-primary z-10 bg-slate-50"
+                        className="p-3 border-0 rounded-l-md focus:ring-2 focus:ring-primary-400 z-10 bg-transparent"
                         aria-label="To currency"
                     >
                         {uniqueCurrencies.map(c => <option key={c.currency} value={c.currency}>{c.currency}</option>)}
@@ -93,14 +93,14 @@ export const CurrencyConverter: React.FC = () => {
                         id="to-amount" 
                         value={convertedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         readOnly
-                        className="block w-full rounded-r-md border-slate-300 shadow-sm bg-slate-50 text-slate-800 font-semibold focus:outline-none pl-4"
+                        className="block w-full p-3 border-0 rounded-r-md bg-transparent text-slate-800 font-semibold focus:outline-none"
                         aria-label="Converted amount"
                     />
                 </div>
             </div>
         </div>
         
-        <div className="mt-4 pt-4 border-t border-slate-200 text-center">
+        <div className="mt-4 pt-4 border-t border-slate-300 text-center">
              <p className="text-sm font-semibold text-slate-700">
                 1 {fromCurrency} = {exchangeRate.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} {toCurrency}
             </p>

@@ -43,7 +43,26 @@ export const sendTransactionalEmail = (recipientEmail: string, subject: string, 
 };
 
 
-// --- Email Template Generators ---
+/**
+ * Simulates sending an SMS notification to a customer.
+ * In a real application, this would use a service like Twilio.
+ * @param phoneNumber - The customer's phone number.
+ * @param message - The text message content.
+ */
+export const sendSmsNotification = (phoneNumber: string, message: string) => {
+  console.log(`
+    ==================================================
+    📱 SIMULATING SMS NOTIFICATION 📱
+    --------------------------------------------------
+    RECIPIENT:    ${phoneNumber}
+    MESSAGE:      ${message}
+    TIMESTAMP:    ${new Date().toISOString()}
+    ==================================================
+  `);
+};
+
+
+// --- Email & SMS Template Generators ---
 
 export const generateTransactionReceiptEmail = (transaction: Transaction, cardholderName: string): { subject: string, body: string } => {
     const subject = `Your ApexBank Transaction Receipt: #${transaction.id}`;
@@ -67,6 +86,11 @@ export const generateTransactionReceiptEmail = (transaction: Transaction, cardho
       </div>
     `;
     return { subject, body: body.trim() };
+};
+
+export const generateTransactionReceiptSms = (transaction: Transaction): string => {
+  const amount = transaction.sendAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  return `ApexBank: Your transfer of ${amount} to ${transaction.recipient.fullName} has been submitted. Txn ID: ${transaction.id}`;
 };
 
 export const generateCardStatusEmail = (cardholderName: string, isFrozen: boolean): { subject: string; body: string } => {
@@ -106,6 +130,10 @@ export const generateNewRecipientEmail = (cardholderName: string, recipientName:
   return { subject, body: body.trim() };
 };
 
+export const generateNewRecipientSms = (recipientName: string): string => {
+  return `ApexBank: A new recipient, "${recipientName}", has been added to your account. If this was not you, contact us immediately.`;
+};
+
 export const generateFundsArrivedEmail = (transaction: Transaction, cardholderName: string): { subject: string, body: string } => {
     const subject = `Your ApexBank Transfer Has Arrived: #${transaction.id}`;
     const body = `
@@ -125,4 +153,77 @@ export const generateFundsArrivedEmail = (transaction: Transaction, cardholderNa
       </div>
     `;
     return { subject, body: body.trim() };
+};
+
+
+export const generateLoginAlertEmail = (userName: string): { subject: string, body: string } => {
+  const subject = `Security Alert: New Sign-in to Your ApexBank Account`;
+  const body = `
+    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #D97706;">Security Alert</h2>
+        <p>Dear ${userName},</p>
+        <p>We detected a new sign-in to your ApexBank account. If this was you, you can safely ignore this email.</p>
+        <p>If you do not recognize this activity, please change your password and contact our support team immediately.</p>
+        <p>Sincerely,<br/>The ApexBank Security Team</p>
+    </div>
+  `;
+  return { subject, body: body.trim() };
+};
+
+export const generateLoginAlertSms = (): string => {
+  return `ApexBank Security Alert: A new sign-in to your account was detected. If this was not you, please contact support immediately.`;
+};
+
+export const generateOtpSms = (): string => {
+  return `Your ApexBank verification code is 123456. Do not share this code. It will expire in 10 minutes.`;
+};
+
+export const generateOtpEmail = (userName: string): { subject: string, body: string } => {
+    const subject = `Your ApexBank Verification Code`;
+    const body = `
+      <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #0052FF;">Confirm Your Action</h2>
+        <p>Dear ${userName},</p>
+        <p>Please use the following verification code to complete your action: <strong>123456</strong></p>
+        <p>This code will expire in 10 minutes. If you did not request this, please contact support immediately.</p>
+        <p>Thank you for helping us keep your account secure.</p>
+      </div>
+    `;
+    return { subject, body: body.trim() };
+};
+
+export const generateWelcomeEmail = (userName: string): { subject: string, body: string } => {
+  const subject = `Welcome to ApexBank, ${userName}!`;
+  const body = `
+    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #0052FF;">Welcome to the Future of Banking!</h2>
+        <p>Hi ${userName},</p>
+        <p>Your ApexBank account has been successfully created. We're thrilled to have you on board.</p>
+        <p>You can now send money internationally with transparent fees, track your transfers in real-time, and manage your finances with our suite of powerful, secure tools.</p>
+        <p>To get started, simply log in to your dashboard.</p>
+        <p>Welcome to ApexBank,<br/>The ApexBank Team</p>
+    </div>
+  `;
+  return { subject, body: body.trim() };
+};
+
+export const generateWelcomeSms = (userName: string): string => {
+  return `Welcome to ApexBank, ${userName}! Your account is now active. Log in to start sending money globally.`;
+};
+
+export const generateDepositConfirmationEmail = (userName: string, amount: number, cardLastFour: string): { subject: string, body: string } => {
+  const subject = `Deposit Confirmation: ${amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} Added to Your Account`;
+  const body = `
+    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #16A34A;">Funds Added Successfully!</h2>
+        <p>Hi ${userName},</p>
+        <p>This email confirms that <strong>${amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</strong> has been successfully deposited into your ApexBank account from your card ending in <strong>${cardLastFour}</strong>.</p>
+        <p>Your new balance is available immediately. Thank you for using ApexBank.</p>
+    </div>
+  `;
+  return { subject, body: body.trim() };
+};
+
+export const generateDepositConfirmationSms = (amount: number, cardLastFour: string): string => {
+  return `ApexBank: A deposit of ${amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} from card **** ${cardLastFour} was successful. Your funds are now available.`;
 };

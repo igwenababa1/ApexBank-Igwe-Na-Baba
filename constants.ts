@@ -1,4 +1,5 @@
 
+
 import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits } from './types';
 
 export const SUPPORTED_COUNTRIES: Country[] = [
@@ -9,24 +10,68 @@ export const SUPPORTED_COUNTRIES: Country[] = [
   { code: 'AU', name: 'Australia', currency: 'AUD' },
 ];
 
+export const TRANSFER_PURPOSES: string[] = [
+    'Family Support',
+    'Payment for Services',
+    'Gift',
+    'Investment',
+    'Personal Expenses',
+    'Loan Repayment',
+    'Other',
+];
+
 export const INITIAL_RECIPIENTS: Recipient[] = [
   {
     id: 'rec_1',
     fullName: 'Jane Doe',
     bankName: 'Chase Bank',
     accountNumber: '**** **** **** 1234',
-    swiftBic: 'CHASUS33',
     country: SUPPORTED_COUNTRIES[0],
+    deliveryOptions: {
+      bankDeposit: true,
+      cardDeposit: true,
+      cashPickup: false,
+    },
+    realDetails: {
+      accountNumber: '9876543210981234',
+      swiftBic: 'CHASUS33',
+    }
   },
   {
     id: 'rec_2',
     fullName: 'John Smith',
     bankName: 'HSBC UK',
     accountNumber: '**** **** **** 5678',
-    swiftBic: 'HBUKGB4B',
     country: SUPPORTED_COUNTRIES[1],
+    deliveryOptions: {
+      bankDeposit: true,
+      cardDeposit: false,
+      cashPickup: true,
+    },
+    realDetails: {
+      accountNumber: '1234567890125678',
+      swiftBic: 'HBUKGB4B',
+    }
   },
 ];
+
+export const SELF_RECIPIENT: Recipient = {
+  id: 'self_0',
+  fullName: 'Eleanor Vance',
+  bankName: 'Card Deposit',
+  accountNumber: '**** **** **** 8842', // User's own card/account
+  country: SUPPORTED_COUNTRIES[0], // Assuming user is in the US for this
+  deliveryOptions: {
+    bankDeposit: true,
+    cardDeposit: true,
+    cashPickup: false,
+  },
+  realDetails: {
+    accountNumber: '4242424242428842',
+    swiftBic: 'APEXUS33',
+  }
+};
+
 
 const now = Date.now();
 
@@ -48,6 +93,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     },
     description: "Payment for services",
     type: 'debit',
+    purpose: 'Payment for Services',
   },
   {
     id: `txn_${now - 3600000}`,
@@ -65,6 +111,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     },
     description: "Family support",
     type: 'debit',
+    purpose: 'Family Support',
   },
 ];
 
@@ -98,3 +145,5 @@ export const INITIAL_TRANSFER_LIMITS: TransferLimits = {
   weekly: { amount: 20000, count: 20 },
   monthly: { amount: 50000, count: 50 },
 };
+
+export const USER_PIN = '1234';

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { TransferLimits } from '../types';
 
@@ -26,7 +25,7 @@ const LimitInputGroup: React.FC<{
             id={`${period}-amount`}
             value={values.amount}
             onChange={e => onChange(period, 'amount', parseInt(e.target.value, 10) || 0)}
-            className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+            className="mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400"
             min="0"
           />
         </div>
@@ -37,7 +36,7 @@ const LimitInputGroup: React.FC<{
             id={`${period}-count`}
             value={values.count}
             onChange={e => onChange(period, 'count', parseInt(e.target.value, 10) || 0)}
-            className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+            className="mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400"
             min="0"
           />
         </div>
@@ -67,7 +66,7 @@ export const ManageLimitsModal: React.FC<ManageLimitsModalProps> = ({ limits, on
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg m-4 overflow-y-auto max-h-screen">
+      <div className="bg-slate-200 rounded-2xl shadow-digital p-8 w-full max-w-lg m-4 overflow-y-auto max-h-screen">
         <h2 className="text-2xl font-bold text-slate-800 mb-6">Manage Transfer Limits</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <LimitInputGroup period="daily" values={currentLimits.daily} onChange={handleChange} />
@@ -75,10 +74,10 @@ export const ManageLimitsModal: React.FC<ManageLimitsModalProps> = ({ limits, on
           <LimitInputGroup period="monthly" values={currentLimits.monthly} onChange={handleChange} />
 
           <div className="mt-8 flex justify-end space-x-3">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-600">
+            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-md hover:shadow-lg transition-shadow">
               Save Changes
             </button>
           </div>

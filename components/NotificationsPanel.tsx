@@ -38,8 +38,8 @@ const timeSince = (date: Date) => {
 
 export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose }) => {
   return (
-    <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-2xl border border-slate-200 z-50 animate-fade-in-down">
-        <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+    <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-slate-200 rounded-2xl shadow-digital z-50 animate-fade-in-down overflow-hidden">
+        <div className="p-4 border-b border-slate-300 flex justify-between items-center">
             <h3 className="font-bold text-slate-800">Notifications</h3>
             {/* Can add a "Mark all as read" button here in the future */}
         </div>
@@ -50,11 +50,11 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
                     <p>No new notifications</p>
                 </div>
             ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-slate-300">
                     {notifications.map(notification => (
-                        <li key={notification.id} className={`p-4 transition-colors duration-200 ${notification.read ? 'bg-white' : 'bg-primary-50'}`}>
+                        <li key={notification.id} className={`p-4 transition-colors duration-200 ${notification.read ? '' : 'bg-primary-50/50'}`}>
                             <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0 mt-1">
+                                <div className="flex-shrink-0 mt-1 p-2 bg-slate-200 rounded-full shadow-digital">
                                     {getNotificationIcon(notification.type)}
                                 </div>
                                 <div>

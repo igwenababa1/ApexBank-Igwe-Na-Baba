@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ClipboardDocumentIcon, DocumentTextIcon, CheckCircleIcon, PencilIcon } from './Icons';
+import { ClipboardDocumentIcon, DocumentTextIcon, CheckCircleIcon, PencilIcon, DevicePhoneMobileIcon, FingerprintIcon, ClockIcon, LockClosedIcon } from './Icons';
 import { TransferLimits } from '../types';
 import { ManageLimitsModal } from './ManageLimitsModal';
 
@@ -21,8 +20,8 @@ interface SettingsProps {
 }
 
 const SettingsCard: React.FC<{ title: string; children: React.ReactNode; action?: React.ReactNode }> = ({ title, children, action }) => (
-  <div className="bg-white shadow-md rounded-lg">
-    <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+  <div className="bg-slate-200 rounded-2xl shadow-digital">
+    <div className="p-6 border-b border-slate-300 flex justify-between items-center">
       <h2 className="text-xl font-bold text-slate-800">{title}</h2>
       {action}
     </div>
@@ -45,6 +44,8 @@ const LimitDisplay: React.FC<{ label: string; amount: number; count: number }> =
 export const Settings: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimits }) => {
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [biometricsEnabled, setBiometricsEnabled] = useState(true);
 
   const handleCopyToClipboard = (text: string, itemName: string) => {
     navigator.clipboard.writeText(text);
@@ -73,16 +74,74 @@ export const Settings: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
           </div>
         </SettingsCard>
 
+        <SettingsCard title="Security Settings">
+            <div className="divide-y divide-slate-300">
+                <div className="py-4 flex justify-between items-center">
+                    <div className="flex items-start space-x-4">
+                        <DevicePhoneMobileIcon className="w-6 h-6 text-slate-500 mt-0.5 flex-shrink-0"/>
+                        <div>
+                            <p className="font-medium text-slate-700">Multi-Factor Authentication (MFA)</p>
+                            <p className="text-sm text-slate-500">Add an extra layer of security to your account.</p>
+                        </div>
+                    </div>
+                    <label htmlFor="mfa-toggle" className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="mfa-toggle" className="sr-only peer" checked={mfaEnabled} onChange={() => setMfaEnabled(prev => !prev)} />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer shadow-digital-inset peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-digital peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+
+                <div className="py-4 flex justify-between items-center">
+                    <div className="flex items-start space-x-4">
+                        <FingerprintIcon className="w-6 h-6 text-slate-500 mt-0.5 flex-shrink-0"/>
+                        <div>
+                            <p className="font-medium text-slate-700">Biometric Login</p>
+                            <p className="text-sm text-slate-500">Sign in quickly and securely with your face or fingerprint.</p>
+                        </div>
+                    </div>
+                     <label htmlFor="bio-toggle" className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="bio-toggle" className="sr-only peer" checked={biometricsEnabled} onChange={() => setBiometricsEnabled(prev => !prev)} />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer shadow-digital-inset peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-digital peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+
+                <div className="py-4 flex justify-between items-center">
+                    <div className="flex items-start space-x-4">
+                        <ClockIcon className="w-6 h-6 text-slate-500 mt-0.5 flex-shrink-0"/>
+                        <div>
+                            <p className="font-medium text-slate-700">Login History</p>
+                            <p className="text-sm text-slate-500">Review recent sign-in activity on your account.</p>
+                        </div>
+                    </div>
+                    <button className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
+                        View Activity
+                    </button>
+                </div>
+                
+                <div className="py-4 flex justify-between items-center">
+                    <div className="flex items-start space-x-4">
+                        <LockClosedIcon className="w-6 h-6 text-slate-500 mt-0.5 flex-shrink-0"/>
+                        <div>
+                            <p className="font-medium text-slate-700">Change Password</p>
+                            <p className="text-sm text-slate-500">Keep your account secure by regularly updating your password.</p>
+                        </div>
+                    </div>
+                    <button className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
+                        Change
+                    </button>
+                </div>
+            </div>
+        </SettingsCard>
+
         <SettingsCard title="Transfer Limits" action={
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-primary bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+            className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow"
           >
             <PencilIcon className="w-4 h-4" />
             <span>Manage</span>
           </button>
         }>
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-slate-300">
             <LimitDisplay label="Daily Limit" amount={transferLimits.daily.amount} count={transferLimits.daily.count} />
             <LimitDisplay label="Weekly Limit" amount={transferLimits.weekly.amount} count={transferLimits.weekly.count} />
             <LimitDisplay label="Monthly Limit" amount={transferLimits.monthly.amount} count={transferLimits.monthly.count} />
@@ -98,7 +157,7 @@ export const Settings: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
               </div>
               <button
                 onClick={() => handleCopyToClipboard(ACCOUNT_DETAILS.routing, 'routing')}
-                className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-primary bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-all"
               >
                 {copiedItem === 'routing' ? (
                   <>
@@ -120,7 +179,7 @@ export const Settings: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
               </div>
               <button
                 onClick={() => handleCopyToClipboard(ACCOUNT_DETAILS.account, 'account')}
-                className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-primary bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-all"
               >
                 {copiedItem === 'account' ? (
                   <>
@@ -139,14 +198,14 @@ export const Settings: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
         </SettingsCard>
         
         <SettingsCard title="Monthly Statements">
-          <ul className="divide-y divide-slate-200">
+          <ul className="divide-y divide-slate-300">
             {MONTHLY_STATEMENTS.map(statement => (
               <li key={statement.id} className="py-3 flex justify-between items-center">
                 <div>
                   <p className="font-medium text-slate-800">{statement.month} {statement.year} Statement</p>
                   <p className="text-sm text-slate-500">{statement.file}</p>
                 </div>
-                <button className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+                <button className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
                   <DocumentTextIcon className="w-4 h-4" />
                   <span>Download</span>
                 </button>

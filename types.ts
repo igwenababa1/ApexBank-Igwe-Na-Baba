@@ -32,14 +32,27 @@ export interface Country {
   currency: string;
 }
 
+export interface DeliveryOptions {
+  bankDeposit: boolean;
+  cardDeposit: boolean;
+  cashPickup: boolean;
+}
+
+export interface RealAccountDetails {
+  accountNumber: string;
+  swiftBic: string;
+}
+
 export interface Recipient {
   id: string;
   fullName: string;
   bankName: string;
-  accountNumber: string;
-  swiftBic: string;
+  accountNumber: string; // Masked account number for display
   country: Country;
+  deliveryOptions: DeliveryOptions;
+  realDetails: RealAccountDetails;
 }
+
 
 export interface Transaction {
   id: string;
@@ -58,6 +71,7 @@ export interface Transaction {
   };
   description: string;
   type: 'debit' | 'credit';
+  purpose?: string;
 }
 
 export interface Card {
@@ -87,4 +101,10 @@ export interface TransferLimits {
   daily: TransferLimit;
   weekly: TransferLimit;
   monthly: TransferLimit;
+}
+
+export interface NewsArticle {
+  title: string;
+  summary: string;
+  category: string;
 }

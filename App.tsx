@@ -1,22 +1,37 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
 import { Recipients } from './components/Recipients';
-import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits } from './types';
-import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS } from './constants';
+import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country } from './types';
+import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT } from './constants';
 import { Welcome } from './components/Welcome';
 import { ActivityLog } from './components/ActivityLog';
 import { Settings } from './components/Settings';
 import { CardManagement } from './components/CardManagement';
-import { sendTransactionalEmail, generateTransactionReceiptEmail, generateNewRecipientEmail, generateCardStatusEmail, generateFundsArrivedEmail } from './services/notificationService';
+import {
+  sendTransactionalEmail,
+  generateTransactionReceiptEmail,
+  generateNewRecipientEmail,
+  generateCardStatusEmail,
+  generateFundsArrivedEmail,
+  sendSmsNotification,
+  generateLoginAlertEmail,
+  generateLoginAlertSms,
+  generateNewRecipientSms,
+  generateTransactionReceiptSms,
+  generateWelcomeEmail,
+  generateWelcomeSms,
+  generateDepositConfirmationEmail,
+  generateDepositConfirmationSms
+} from './services/notificationService';
 
-type View = 'dashboard' | 'send' | 'recipients' | 'activity' | 'settings' | 'cards';
+type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'settings' | 'cards';
 
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const USER_EMAIL = "eleanor.vance@apexbank.com";
 const USER_NAME = "Eleanor Vance";
+const USER_PHONE = "+1-555-012-1234";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -28,13 +43,27 @@ function App() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [transferLimits, setTransferLimits] = useState<TransferLimits>(INITIAL_TRANSFER_LIMITS);
   
-  const handleLogin = () => {
+  const handleLogin = (isNewAccount = false) => {
     setIsAuthenticated(true);
-    addNotification(
-      NotificationType.SECURITY,
-      'Successful Sign In',
-      'Your account was accessed from a new device. If this was not you, please contact support.'
-    );
+    if (isNewAccount) {
+        addNotification(
+            NotificationType.SECURITY,
+            'Welcome to ApexBank!',
+            'Your account has been successfully created. We\'re glad to have you.'
+        );
+        const { subject, body } = generateWelcomeEmail(USER_NAME);
+        sendTransactionalEmail(USER_EMAIL, subject, body);
+        sendSmsNotification(USER_PHONE, generateWelcomeSms(USER_NAME));
+    } else {
+        addNotification(
+            NotificationType.SECURITY,
+            'Successful Sign In',
+            'Your account was accessed from a new device. If this was not you, please contact support.'
+        );
+        const { subject, body } = generateLoginAlertEmail(USER_NAME);
+        sendTransactionalEmail(USER_EMAIL, subject, body);
+        sendSmsNotification(USER_PHONE, generateLoginAlertSms());
+    }
   };
   
   const handleLogout = useCallback(() => {
@@ -59,10 +88,24 @@ function App() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const addRecipient = (recipientData: Omit<Recipient, 'id'>) => {
+  const addRecipient = (data: { fullName: string; bankName: string; accountNumber: string; swiftBic: string; country: Country; cashPickupEnabled: boolean; }) => {
+    const maskedAccountNumber = `**** **** **** ${data.accountNumber.slice(-4)}`;
+    
     const newRecipient: Recipient = {
-      ...recipientData,
-      id: `rec_${Date.now()}`
+      id: `rec_${Date.now()}`,
+      fullName: data.fullName,
+      bankName: data.bankName,
+      accountNumber: maskedAccountNumber,
+      country: data.country,
+      deliveryOptions: {
+        bankDeposit: true,
+        cardDeposit: Math.random() > 0.5, // Randomize for demo
+        cashPickup: data.cashPickupEnabled,
+      },
+      realDetails: {
+        accountNumber: data.accountNumber,
+        swiftBic: data.swiftBic,
+      }
     };
     setRecipients(prev => [...prev, newRecipient]);
     addNotification(
@@ -73,9 +116,10 @@ function App() {
 
     const { subject, body } = generateNewRecipientEmail(USER_NAME, newRecipient.fullName);
     sendTransactionalEmail(USER_EMAIL, subject, body);
+    sendSmsNotification(USER_PHONE, generateNewRecipientSms(newRecipient.fullName));
   };
 
-  const createTransaction = (txData: Omit<Transaction, 'id' | 'status' | 'estimatedArrival' | 'statusTimestamps'>): Transaction | null => {
+  const createTransaction = (txData: Omit<Transaction, 'id' | 'status' | 'estimatedArrival' | 'statusTimestamps' | 'type'>): Transaction | null => {
     const now = new Date();
     const totalCost = txData.sendAmount + txData.fee;
 
@@ -141,10 +185,47 @@ function App() {
 
     const { subject, body } = generateTransactionReceiptEmail(newTransaction, USER_NAME);
     sendTransactionalEmail(USER_EMAIL, subject, body);
+    sendSmsNotification(USER_PHONE, generateTransactionReceiptSms(newTransaction));
+
 
     return newTransaction;
   };
   
+  const addFunds = (amount: number, cardLastFour: string, cardNetwork: 'Visa' | 'Mastercard') => {
+    const now = new Date();
+    
+    const newDeposit: Transaction = {
+      id: `txn_${now.getTime()}`,
+      recipient: SELF_RECIPIENT,
+      sendAmount: amount,
+      receiveAmount: amount,
+      fee: 0,
+      exchangeRate: 1,
+      status: TransactionStatus.FUNDS_ARRIVED,
+      estimatedArrival: now,
+      statusTimestamps: {
+        [TransactionStatus.SUBMITTED]: now,
+        [TransactionStatus.FUNDS_ARRIVED]: now,
+      },
+      description: `Deposit from ${cardNetwork} **** ${cardLastFour}`,
+      type: 'credit',
+      purpose: 'Account Deposit',
+    };
+
+    setTransactions(prev => [newDeposit, ...prev]);
+    setAccountBalance(prev => prev + amount);
+    addNotification(
+        NotificationType.TRANSACTION,
+        'Funds Added',
+        `${amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been added to your account.`
+    );
+
+    const { subject, body } = generateDepositConfirmationEmail(USER_NAME, amount, cardLastFour);
+    sendTransactionalEmail(USER_EMAIL, subject, body);
+    sendSmsNotification(USER_PHONE, generateDepositConfirmationSms(amount, cardLastFour));
+  };
+
+
   const handleToggleFreeze = () => {
     const isNowFrozen = !cardDetails.isFrozen;
     setCardDetails(prev => ({...prev, isFrozen: isNowFrozen }));
@@ -274,13 +355,13 @@ function App() {
       case 'dashboard':
         return <Dashboard accountBalance={accountBalance} transactions={transactions} />;
       case 'send':
-        return <SendMoneyFlow recipients={recipients} accountBalance={accountBalance} createTransaction={createTransaction} />;
+        return <SendMoneyFlow recipients={recipients} accountBalance={accountBalance} createTransaction={createTransaction} transactions={transactions} />;
       case 'recipients':
         return <Recipients recipients={recipients} addRecipient={addRecipient} />;
       case 'cards':
-        return <CardManagement card={cardDetails} transactions={INITIAL_CARD_TRANSACTIONS} onToggleFreeze={handleToggleFreeze} />;
-      case 'activity':
-        return <ActivityLog transactions={transactions} accountBalance={accountBalance} />;
+        return <CardManagement card={cardDetails} transactions={INITIAL_CARD_TRANSACTIONS} onToggleFreeze={handleToggleFreeze} accountBalance={accountBalance} onAddFunds={addFunds} />;
+      case 'history':
+        return <ActivityLog transactions={transactions} />;
       case 'settings':
         return <Settings transferLimits={transferLimits} onUpdateLimits={setTransferLimits} />;
       default:
@@ -293,7 +374,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-200">
       <Header 
         activeView={activeView} 
         setActiveView={setActiveView} 

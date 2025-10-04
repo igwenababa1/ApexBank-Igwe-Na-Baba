@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     ApexBankLogo, 
     GlobeAltIcon, 
@@ -18,14 +18,16 @@ import {
     ServerIcon
 } from './Icons';
 import { LoginModal } from './LoginModal';
+import { AccountCreationModal } from './AccountCreationModal';
+import { getBankIntroNote } from '../services/geminiService';
 
 interface WelcomeProps {
-  onLogin: () => void;
+  onLogin: (isNewAccount?: boolean) => void;
 }
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-    <div className="flex items-center justify-center w-12 h-12 bg-primary-50 rounded-full mb-4">
+  <div className="bg-slate-200 p-6 rounded-2xl shadow-digital hover:shadow-digital-inset transition-all duration-300 group">
+    <div className="flex items-center justify-center w-12 h-12 bg-slate-200 rounded-full mb-4 shadow-digital group-hover:shadow-digital-inset">
       {icon}
     </div>
     <h3 className="text-lg font-bold text-slate-800 mb-2">{title}</h3>
@@ -35,31 +37,85 @@ const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: Re
 
 export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState(false);
+  const [introNote, setIntroNote] = useState<string>('');
+  const [isNoteLoading, setIsNoteLoading] = useState<boolean>(true);
+  const [isNoteError, setIsNoteError] = useState<boolean>(false);
+
+  useEffect(() => {
+    getBankIntroNote().then(result => {
+      if (result.isError) {
+        setIsNoteError(true);
+      }
+      setIntroNote(result.note);
+      setIsNoteLoading(false);
+    });
+  }, []);
+
+  const handleOpenCreateAccount = () => {
+    setIsLoginModalOpen(false);
+    setIsCreateAccountModalOpen(true);
+  };
+  
+  const handleCreateAccountSuccess = () => {
+    setIsCreateAccountModalOpen(false);
+    onLogin(true); // Pass true to indicate a new account
+  };
 
   return (
     <>
-      <div className="bg-slate-50 min-h-screen">
+      <div className="bg-slate-200 min-h-screen">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40">
+        <header className="bg-slate-200/80 backdrop-blur-md sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-2">
                 <ApexBankLogo />
                 <h1 className="text-2xl font-bold text-slate-800">ApexBank</h1>
               </div>
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-600 transition-colors"
-              >
-                Sign In / Create Account
-              </button>
+              <div className="flex items-center space-x-3">
+                 <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-5 py-2 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => setIsCreateAccountModalOpen(true)}
+                  className="px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                >
+                  Create Account
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
         <main>
+          {/* New Intelligent Note Section */}
+          <section className="bg-slate-200 pt-12">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="bg-slate-200 p-8 rounded-2xl shadow-digital-inset text-center">
+                <div className="flex justify-center items-center mb-4">
+                  <LightBulbIcon className="w-8 h-8 text-yellow-500" />
+                  <h2 className="ml-3 text-2xl font-bold text-slate-800">A Note from Your Digital Banking Partner</h2>
+                </div>
+                {isNoteLoading ? (
+                  <div className="space-y-3 animate-pulse max-w-2xl mx-auto">
+                    <div className="h-4 bg-slate-300 rounded w-full"></div>
+                    <div className="h-4 bg-slate-300 rounded w-5/6 mx-auto"></div>
+                  </div>
+                ) : (
+                  <p className={`text-lg text-slate-700 italic max-w-3xl mx-auto ${isNoteError ? 'text-yellow-800' : ''}`}>
+                    "{introNote}"
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
           {/* Hero Section */}
-          <section className="text-center py-20 lg:py-32 bg-white">
+          <section className="text-center pt-20 pb-20 lg:pt-24 lg:pb-32 bg-slate-200">
             <div className="max-w-4xl mx-auto px-4">
               <h1 className="text-4xl lg:text-6xl font-extrabold text-slate-900 tracking-tight">
                 The Future of Global Banking.
@@ -69,8 +125,8 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                 Send money across borders with unparalleled speed, transparency, and security. Welcome to the new standard in international finance.
               </p>
               <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="mt-10 px-8 py-4 text-lg font-bold text-white bg-primary rounded-lg hover:bg-primary-600 transition-transform hover:scale-105"
+                onClick={() => setIsCreateAccountModalOpen(true)}
+                className="mt-10 px-8 py-4 text-lg font-bold text-white bg-primary rounded-lg shadow-lg hover:shadow-xl transition-transform hover:scale-105"
               >
                 Get Started for Free
               </button>
@@ -102,18 +158,20 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           </section>
 
           {/* CEO Message Section */}
-          <section className="bg-white py-20 lg:py-24">
+          <section className="bg-slate-200 py-20 lg:py-24">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12">
               <div className="md:w-1/3 text-center">
-                  <img 
-                      src={`https://i.pravatar.cc/150?u=ceo`}
-                      alt="Eleanor Vance, CEO of ApexBank"
-                      className="w-40 h-40 rounded-full mx-auto shadow-lg"
-                  />
+                  <div className="p-2 inline-block rounded-full shadow-digital">
+                    <img 
+                        src={`https://i.pravatar.cc/150?u=ceo`}
+                        alt="Eleanor Vance, CEO of ApexBank"
+                        className="w-40 h-40 rounded-full"
+                    />
+                  </div>
               </div>
               <div className="md:w-2/3">
                   <blockquote className="text-xl text-slate-800 italic relative">
-                  <svg className="w-16 h-16 text-primary-100 absolute -top-4 -left-6" fill="currentColor" viewBox="0 0 32 32" aria-hidden="true">
+                  <svg className="w-16 h-16 text-slate-300 absolute -top-4 -left-6" fill="currentColor" viewBox="0 0 32 32" aria-hidden="true">
                       <path d="M9.333 8h-4.667v-4h4.667v4zM27.333 8h-4.667v-4h4.667v4zM22.667 12v12h9.333v-12h-9.333zM4.667 12v12h9.333v-12h-9.333z"></path>
                   </svg>
                   <p className="relative">"We founded ApexBank in 2024 with a simple mission: to eliminate the friction and frustration of international finance for professionals and businesses worldwide. We believe your money should move as freely and efficiently as you do."</p>
@@ -125,7 +183,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           </section>
 
           {/* Trust & Security Section */}
-          <section className="py-20 lg:py-24 bg-slate-100">
+          <section className="py-20 lg:py-24 bg-slate-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold text-slate-800">Security You Can Bank On</h2>
@@ -133,28 +191,28 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
                 <div className="flex flex-col items-center">
-                    <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md mb-4">
+                    <div className="flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full shadow-digital mb-4">
                         <LicensedPartnerIcon className="w-8 h-8 text-primary"/>
                     </div>
                     <h3 className="font-semibold text-slate-800">Licensed & Regulated</h3>
                     <p className="text-sm text-slate-600 mt-1">Services are provided by licensed financial partners in each jurisdiction.</p>
                 </div>
                 <div className="flex flex-col items-center">
-                    <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md mb-4">
+                    <div className="flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full shadow-digital mb-4">
                         <DataEncryptionIcon className="w-8 h-8 text-primary"/>
                     </div>
                     <h3 className="font-semibold text-slate-800">End-to-End Encryption</h3>
                     <p className="text-sm text-slate-600 mt-1">Your data and transactions are secured with AES-256 encryption.</p>
                 </div>
                 <div className="flex flex-col items-center">
-                    <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md mb-4">
+                    <div className="flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full shadow-digital mb-4">
                         <ComplianceIcon className="w-8 h-8 text-primary"/>
                     </div>
                     <h3 className="font-semibold text-slate-800">Globally Compliant</h3>
                     <p className="text-sm text-slate-600 mt-1">We adhere to strict KYC and AML regulations to prevent fraud.</p>
                 </div>
                 <div className="flex flex-col items-center">
-                    <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md mb-4">
+                    <div className="flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full shadow-digital mb-4">
                         <FundsProtectedIcon className="w-8 h-8 text-primary"/>
                     </div>
                     <h3 className="font-semibold text-slate-800">Funds Safeguarded</h3>
@@ -165,29 +223,29 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           </section>
 
           {/* Performance Section */}
-          <section className="py-20 lg:py-24 bg-white">
+          <section className="py-20 lg:py-24 bg-slate-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                 <h2 className="text-3xl font-bold text-slate-800">Performance You Can Count On</h2>
                 <p className="mt-3 text-slate-600 max-w-3xl mx-auto">Our infrastructure is built for speed, scale, and reliability, ensuring your financial operations run smoothly around the clock.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                <div className="bg-slate-50 p-8 rounded-lg">
-                  <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md mb-4 mx-auto">
+                <div className="bg-slate-200 p-8 rounded-2xl shadow-digital">
+                  <div className="flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full shadow-digital mb-4 mx-auto">
                     <LightningBoltIcon className="w-8 h-8 text-primary"/>
                   </div>
                   <h3 className="text-xl font-bold text-slate-800">Transfers in Minutes</h3>
                   <p className="text-sm text-slate-600 mt-2">Many of our popular transfer routes are completed in minutes, not days. Get your money where it needs to be, faster.</p>
                 </div>
-                <div className="bg-slate-50 p-8 rounded-lg">
-                  <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md mb-4 mx-auto">
+                <div className="bg-slate-200 p-8 rounded-2xl shadow-digital">
+                  <div className="flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full shadow-digital mb-4 mx-auto">
                     <TrendingUpIcon className="w-8 h-8 text-primary"/>
                   </div>
                   <h3 className="text-xl font-bold text-slate-800">Millions Processed Securely</h3>
                   <p className="text-sm text-slate-600 mt-2">We process millions of dollars in transactions securely every day, with a proven track record of safety and success.</p>
                 </div>
-                <div className="bg-slate-50 p-8 rounded-lg">
-                  <div className="flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md mb-4 mx-auto">
+                <div className="bg-slate-200 p-8 rounded-2xl shadow-digital">
+                  <div className="flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full shadow-digital mb-4 mx-auto">
                     <ServerIcon className="w-8 h-8 text-primary"/>
                   </div>
                   <h3 className="text-xl font-bold text-slate-800">99.99% Uptime</h3>
@@ -198,27 +256,27 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
           </section>
 
           {/* Partners & Certifications Section */}
-          <section className="py-20 lg:py-24 bg-slate-100">
+          <section className="py-20 lg:py-24 bg-slate-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold text-slate-800">Our Trusted Partners & Certifications</h2>
                   <p className="mt-3 text-slate-600 max-w-3xl mx-auto">We partner with industry leaders and adhere to global standards to ensure the integrity of our platform and the safety of your funds.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
-                <div className="flex flex-col items-center text-center p-4">
-                  <PlaidLogoIcon className="h-12 w-auto text-slate-800 filter grayscale hover:grayscale-0 transition duration-300" />
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                  <PlaidLogoIcon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">Securely connect your bank accounts with Plaid's industry-leading technology.</p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4">
-                  <FdicInsuredIcon className="h-12 w-auto text-slate-800 filter grayscale hover:grayscale-0 transition duration-300" />
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                  <FdicInsuredIcon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">Eligible funds are FDIC insured up to $250,000 through our partner banks.</p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4">
-                  <PciDssIcon className="h-12 w-auto text-slate-800 filter grayscale hover:grayscale-0 transition duration-300" />
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                  <PciDssIcon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">PCI DSS compliance ensures your sensitive payment information is handled securely.</p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4">
-                  <Soc2Icon className="h-12 w-auto text-slate-800 filter grayscale hover:grayscale-0 transition duration-300" />
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                  <Soc2Icon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">SOC 2 certified infrastructure demonstrates our commitment to data security.</p>
                 </div>
               </div>
@@ -237,8 +295,15 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
       </div>
       {isLoginModalOpen && (
         <LoginModal 
-            onLogin={onLogin} 
-            onClose={() => setIsLoginModalOpen(false)} 
+            onLogin={() => onLogin()} 
+            onClose={() => setIsLoginModalOpen(false)}
+            onSwitchToCreateAccount={handleOpenCreateAccount} 
+        />
+      )}
+      {isCreateAccountModalOpen && (
+        <AccountCreationModal
+            onClose={() => setIsCreateAccountModalOpen(false)}
+            onCreateAccountSuccess={handleCreateAccountSuccess}
         />
       )}
     </>
