@@ -3,12 +3,17 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
 import { Recipients } from './components/Recipients';
-import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country } from './types';
-import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT } from './constants';
+import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction } from './types';
+import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS } from './constants';
 import { Welcome } from './components/Welcome';
 import { ActivityLog } from './components/ActivityLog';
-import { Settings } from './components/Settings';
+import { Security } from './components/Settings';
 import { CardManagement } from './components/CardManagement';
+import { Loans } from './components/Loans';
+import { Support } from './components/Support';
+import { Accounts } from './components/Accounts';
+import { CryptoDashboard } from './components/CryptoDashboard';
+import { ServicesDashboard } from './components/ServicesDashboard';
 import {
   sendTransactionalEmail,
   generateTransactionReceiptEmail,
@@ -25,8 +30,122 @@ import {
   generateDepositConfirmationEmail,
   generateDepositConfirmationSms
 } from './services/notificationService';
+import { getInsuranceProductDetails } from './services/geminiService';
+import { DevicePhoneMobileIcon, GlobeAltIcon, ShieldCheckIcon, SpinnerIcon, InfoIcon, CheckCircleIcon } from './components/Icons';
 
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'settings' | 'cards';
+
+const InsuranceProductCard: React.FC<{ product: InsuranceProduct }> = ({ product }) => {
+    const getIcon = (name: string) => {
+        if (name.includes('Transfer')) return <ShieldCheckIcon className="w-6 h-6 text-primary" />;
+        if (name.includes('Travel')) return <GlobeAltIcon className="w-6 h-6 text-primary" />;
+        if (name.includes('Device')) return <DevicePhoneMobileIcon className="w-6 h-6 text-primary" />;
+        return <ShieldCheckIcon className="w-6 h-6 text-primary" />;
+    };
+    return (
+        <div className="bg-slate-200 rounded-2xl shadow-digital p-6 flex flex-col">
+            <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center shadow-digital">
+                    {getIcon(product.name)}
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-slate-800">{product.name}</h3>
+                </div>
+            </div>
+            <p className="text-sm text-slate-600 my-4 flex-grow">{product.description}</p>
+            <div className="space-y-3 pt-4 border-t border-slate-300">
+                {product.benefits.map((benefit, i) => (
+                    <div key={i} className="flex items-start space-x-2">
+                        <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-slate-700">{benefit}</p>
+                    </div>
+                ))}
+            </div>
+            <button className="mt-6 w-full py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                Get a Quote
+            </button>
+        </div>
+    );
+};
+
+const InsuranceSkeletonLoader: React.FC = () => (
+    <div className="bg-slate-200 rounded-2xl shadow-digital p-6 animate-pulse">
+        <div className="flex items-start space-x-4">
+            <div className="w-12 h-12 bg-slate-300 rounded-lg"></div>
+            <div className="flex-1 space-y-2">
+                 <div className="h-5 bg-slate-300 rounded w-3/4"></div>
+            </div>
+        </div>
+        <div className="h-4 bg-slate-300 rounded w-full mt-4"></div>
+        <div className="h-4 bg-slate-300 rounded w-5/6 mt-2"></div>
+        <div className="h-10 bg-slate-300 rounded-lg w-full mt-6"></div>
+    </div>
+);
+
+
+const Insurance: React.FC = () => {
+    const [products, setProducts] = useState<InsuranceProduct[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isError, setIsError] = useState(false);
+
+    useEffect(() => {
+        const fetchInsuranceProducts = async () => {
+            const productNames = ['Transfer Protection', 'Global Travel Insurance', 'Device Protection'];
+            try {
+                const results = await Promise.all(
+                    productNames.map(name => getInsuranceProductDetails(name))
+                );
+                const fetchedProducts = results.map(r => r.product).filter((p): p is InsuranceProduct => p !== null);
+
+                if (results.some(r => r.isError) && fetchedProducts.length === 0) {
+                    setIsError(true);
+                } else {
+                    setProducts(fetchedProducts);
+                }
+            } catch (error) {
+                console.error("Failed to fetch insurance products:", error);
+                setIsError(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchInsuranceProducts();
+    }, []);
+
+    return (
+        <div className="space-y-8">
+            <div>
+                <h2 className="text-2xl font-bold text-slate-800">Insurance & Protection</h2>
+                <p className="text-sm text-slate-500 mt-1">Enhance your financial security with tailored protection plans from our trusted partners.</p>
+            </div>
+            <div className="bg-slate-200 rounded-2xl shadow-digital p-6 text-center">
+                 <h3 className="text-xl font-bold text-slate-800">Peace of Mind, Powered by Apex Assurance</h3>
+                 <p className="mt-2 text-slate-600 max-w-3xl mx-auto">
+                    We've partnered with industry-leading insurer Apex Assurance to offer you exclusive protection products. Whether you're sending money, traveling, or just going about your day, we've got you covered.
+                 </p>
+            </div>
+            {isLoading ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <InsuranceSkeletonLoader />
+                    <InsuranceSkeletonLoader />
+                    <InsuranceSkeletonLoader />
+                 </div>
+            ) : isError ? (
+                <div className="flex items-center space-x-3 text-yellow-700 bg-yellow-100 p-4 rounded-lg shadow-digital-inset">
+                    <InfoIcon className="w-6 h-6" />
+                    <p>Could not load insurance products at this time. Please try again later.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {products.map(product => <InsuranceProductCard key={product.name} product={product} />)}
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services';
 
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const USER_EMAIL = "eleanor.vance@apexbank.com";
@@ -36,12 +155,19 @@ const USER_PHONE = "+1-555-012-1234";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeView, setActiveView] = useState<View>('dashboard');
-  const [accountBalance, setAccountBalance] = useState(10000);
+  const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
   const [recipients, setRecipients] = useState<Recipient[]>(INITIAL_RECIPIENTS);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [cardDetails, setCardDetails] = useState<Card>(INITIAL_CARD_DETAILS);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [transferLimits, setTransferLimits] = useState<TransferLimits>(INITIAL_TRANSFER_LIMITS);
+  const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
+  const [verificationLevel, setVerificationLevel] = useState<VerificationLevel>(VerificationLevel.UNVERIFIED);
+  const [cryptoHoldings, setCryptoHoldings] = useState<CryptoHolding[]>(INITIAL_CRYPTO_HOLDINGS);
+  const [cryptoAssets, setCryptoAssets] = useState<CryptoAsset[]>(INITIAL_CRYPTO_ASSETS);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionService[]>(INITIAL_SUBSCRIPTIONS);
+  const [appleCardDetails, setAppleCardDetails] = useState<AppleCardDetails>(INITIAL_APPLE_CARD_DETAILS);
+  const [appleCardTransactions, setAppleCardTransactions] = useState<AppleCardTransaction[]>(INITIAL_APPLE_CARD_TRANSACTIONS);
   
   const handleLogin = (isNewAccount = false) => {
     setIsAuthenticated(true);
@@ -88,12 +214,13 @@ function App() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const addRecipient = (data: { fullName: string; bankName: string; accountNumber: string; swiftBic: string; country: Country; cashPickupEnabled: boolean; }) => {
+  const addRecipient = (data: { fullName: string; bankName: string; accountNumber: string; swiftBic: string; country: Country; cashPickupEnabled: boolean; nickname?: string; }) => {
     const maskedAccountNumber = `**** **** **** ${data.accountNumber.slice(-4)}`;
     
     const newRecipient: Recipient = {
       id: `rec_${Date.now()}`,
       fullName: data.fullName,
+      nickname: data.nickname,
       bankName: data.bankName,
       accountNumber: maskedAccountNumber,
       country: data.country,
@@ -118,51 +245,90 @@ function App() {
     sendTransactionalEmail(USER_EMAIL, subject, body);
     sendSmsNotification(USER_PHONE, generateNewRecipientSms(newRecipient.fullName));
   };
+  
+  const handleUpdateRecipientNickname = (recipientId: string, nickname: string) => {
+    setRecipients(prev =>
+      prev.map(r => (r.id === recipientId ? { ...r, nickname } : r))
+    );
+     addNotification(
+        NotificationType.SECURITY,
+        'Recipient Updated',
+        `A nickname was updated for one of your recipients.`
+    );
+  };
+  
+  const handleUpdateAccountNickname = (accountId: string, nickname: string) => {
+    setAccounts(prevAccounts =>
+      prevAccounts.map(acc =>
+        acc.id === accountId ? { ...acc, nickname } : acc
+      )
+    );
+    addNotification(
+      NotificationType.SECURITY,
+      'Account Nickname Updated',
+      `Your account nickname has been successfully updated.`
+    );
+  };
+
+  const addLoanApplication = (appData: Omit<LoanApplication, 'id' | 'status' | 'submittedDate'>) => {
+      const newApplication: LoanApplication = {
+          ...appData,
+          id: `loan_${Date.now()}`,
+          status: LoanApplicationStatus.PENDING,
+          submittedDate: new Date(),
+      };
+      setLoanApplications(prev => [newApplication, ...prev]);
+      
+      // Simulate review process
+      setTimeout(() => {
+          setLoanApplications(prev => prev.map(app => {
+              if (app.id === newApplication.id) {
+                  const isApproved = Math.random() > 0.3; // 70% chance of approval
+                  const newStatus = isApproved ? LoanApplicationStatus.APPROVED : LoanApplicationStatus.REJECTED;
+                  addNotification(
+                      NotificationType.LOAN,
+                      `Loan Application ${newStatus}`,
+                      `Your application for a ${app.loanProduct.name} of ${app.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been ${newStatus.toLowerCase()}.`
+                  );
+                  if (newStatus === LoanApplicationStatus.APPROVED) {
+                    // Find checking account to deposit funds
+                    setAccounts(prevAccounts => prevAccounts.map(acc => {
+                        if (acc.type === 'Global Checking') {
+                            return { ...acc, balance: acc.balance + app.amount };
+                        }
+                        return acc;
+                    }));
+                    addNotification(
+                        NotificationType.TRANSACTION,
+                        'Funds Disbursed',
+                        `${app.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been disbursed to your account.`
+                    );
+                  }
+                  return { ...app, status: newStatus };
+              }
+              return app;
+          }));
+      }, 5000); // 5 second review
+  };
 
   const createTransaction = (txData: Omit<Transaction, 'id' | 'status' | 'estimatedArrival' | 'statusTimestamps' | 'type'>): Transaction | null => {
     const now = new Date();
     const totalCost = txData.sendAmount + txData.fee;
+    
+    const sourceAccount = accounts.find(acc => acc.id === txData.accountId);
+    if (!sourceAccount || sourceAccount.balance < totalCost) {
+        addNotification(NotificationType.TRANSACTION, 'Transaction Failed', 'Insufficient funds for this transfer.');
+        return null;
+    }
 
     // --- Limit Checking ---
     const today = new Date();
     today.setHours(0,0,0,0);
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
     const dailyTx = transactions.filter(t => t.statusTimestamps.Submitted.getTime() >= today.getTime());
-    const weeklyTx = transactions.filter(t => t.statusTimestamps.Submitted.getTime() >= startOfWeek.getTime());
-    const monthlyTx = transactions.filter(t => t.statusTimestamps.Submitted.getTime() >= startOfMonth.getTime());
-
-    const dailySum = dailyTx.reduce((sum, t) => sum + t.sendAmount + t.fee, 0);
-    const weeklySum = weeklyTx.reduce((sum, t) => sum + t.sendAmount + t.fee, 0);
-    const monthlySum = monthlyTx.reduce((sum, t) => sum + t.sendAmount + t.fee, 0);
-    
     if (dailyTx.length >= transferLimits.daily.count) {
-      alert(`Daily transaction limit exceeded. You cannot make more than ${transferLimits.daily.count} transactions per day.`);
+      addNotification(NotificationType.TRANSACTION, 'Transaction Failed', 'You have exceeded your daily transaction limit.');
       return null;
     }
-    if (dailySum + totalCost > transferLimits.daily.amount) {
-      alert(`Daily amount limit exceeded. This transaction would exceed your daily limit of ${transferLimits.daily.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}.`);
-      return null;
-    }
-    if (weeklyTx.length >= transferLimits.weekly.count) {
-      alert(`Weekly transaction limit exceeded. You cannot make more than ${transferLimits.weekly.count} transactions per week.`);
-      return null;
-    }
-    if (weeklySum + totalCost > transferLimits.weekly.amount) {
-      alert(`Weekly amount limit exceeded. This transaction would exceed your weekly limit of ${transferLimits.weekly.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}.`);
-      return null;
-    }
-    if (monthlyTx.length >= transferLimits.monthly.count) {
-      alert(`Monthly transaction limit exceeded. You cannot make more than ${transferLimits.monthly.count} transactions per month.`);
-      return null;
-    }
-    if (monthlySum + totalCost > transferLimits.monthly.amount) {
-      alert(`Monthly amount limit exceeded. This transaction would exceed your monthly limit of ${transferLimits.monthly.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}.`);
-      return null;
-    }
-
 
     const newTransaction: Transaction = {
       ...txData,
@@ -176,7 +342,9 @@ function App() {
       type: 'debit',
     };
     setTransactions(prev => [newTransaction, ...prev]);
-    setAccountBalance(prev => prev - totalCost);
+    setAccounts(prevAccounts => prevAccounts.map(acc => 
+        acc.id === txData.accountId ? { ...acc, balance: acc.balance - totalCost } : acc
+    ));
     addNotification(
         NotificationType.TRANSACTION,
         'Transfer Submitted',
@@ -193,9 +361,12 @@ function App() {
   
   const addFunds = (amount: number, cardLastFour: string, cardNetwork: 'Visa' | 'Mastercard') => {
     const now = new Date();
+    const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
+    if (!checkingAccount) return;
     
     const newDeposit: Transaction = {
       id: `txn_${now.getTime()}`,
+      accountId: checkingAccount.id,
       recipient: SELF_RECIPIENT,
       sendAmount: amount,
       receiveAmount: amount,
@@ -213,7 +384,9 @@ function App() {
     };
 
     setTransactions(prev => [newDeposit, ...prev]);
-    setAccountBalance(prev => prev + amount);
+    setAccounts(prevAccounts => prevAccounts.map(acc => 
+        acc.id === checkingAccount.id ? { ...acc, balance: acc.balance + amount } : acc
+    ));
     addNotification(
         NotificationType.TRANSACTION,
         'Funds Added',
@@ -238,6 +411,46 @@ function App() {
     const { subject, body } = generateCardStatusEmail(USER_NAME, isNowFrozen);
     sendTransactionalEmail(USER_EMAIL, subject, body);
   };
+  
+  const handlePaySubscription = (subscriptionId: string) => {
+    const sub = subscriptions.find(s => s.id === subscriptionId);
+    const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
+
+    if (!sub || !checkingAccount || checkingAccount.balance < sub.amount) {
+      addNotification(NotificationType.SUBSCRIPTION, 'Payment Failed', `Insufficient funds to pay for ${sub?.provider}.`);
+      return false;
+    }
+
+    // Deduct from account
+    setAccounts(prev => prev.map(acc => 
+      acc.id === checkingAccount.id ? { ...acc, balance: acc.balance - sub.amount } : acc
+    ));
+
+    // Create a transaction record
+    const now = new Date();
+    const newTransaction: Transaction = {
+      id: `txn_sub_${now.getTime()}`,
+      accountId: checkingAccount.id,
+      recipient: { ...SELF_RECIPIENT, fullName: sub.provider, bankName: 'Bill Payment' },
+      sendAmount: sub.amount,
+      receiveAmount: sub.amount,
+      fee: 0,
+      exchangeRate: 1,
+      status: TransactionStatus.FUNDS_ARRIVED,
+      estimatedArrival: now,
+      statusTimestamps: { [TransactionStatus.SUBMITTED]: now, [TransactionStatus.FUNDS_ARRIVED]: now },
+      description: `Payment for ${sub.provider} - ${sub.plan}`,
+      type: 'debit',
+      purpose: 'Bill Payment',
+    };
+    setTransactions(prev => [newTransaction, ...prev]);
+
+    // Mark subscription as paid
+    setSubscriptions(prev => prev.map(s => s.id === subscriptionId ? { ...s, isPaid: true } : s));
+
+    addNotification(NotificationType.SUBSCRIPTION, 'Payment Successful', `Your payment of ${sub.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} to ${sub.provider} was successful.`);
+    return true;
+  };
 
   const updateTransactionStatuses = useCallback(() => {
     const newNotifications: Notification[] = [];
@@ -253,34 +466,25 @@ function App() {
         let newStatus: TransactionStatus = tx.status;
         const timestamps = tx.statusTimestamps;
 
-        // Process status changes sequentially with delays between each stage
         switch (tx.status) {
           case TransactionStatus.SUBMITTED:
-            // Wait a few seconds before 'Converting'
             if (now - timestamps[TransactionStatus.SUBMITTED].getTime() > 3000) {
               newStatus = TransactionStatus.CONVERTING;
             }
             break;
           case TransactionStatus.CONVERTING:
-            // Wait a longer period before going 'In Transit'
             const convertingTimestamp = timestamps[TransactionStatus.CONVERTING];
             if (convertingTimestamp && now - convertingTimestamp.getTime() > 8000) {
               newStatus = TransactionStatus.IN_TRANSIT;
             }
             break;
           case TransactionStatus.IN_TRANSIT:
-            // Final step is reaching the estimated arrival time
             if (now >= tx.estimatedArrival.getTime()) {
               newStatus = TransactionStatus.FUNDS_ARRIVED;
             }
             break;
           default:
             break;
-        }
-
-        // Catch-all for overdue transactions that might have been missed (e.g., browser tab was inactive)
-        if (newStatus === tx.status && now >= tx.estimatedArrival.getTime()) {
-            newStatus = TransactionStatus.FUNDS_ARRIVED;
         }
         
         if (newStatus !== tx.status) {
@@ -318,13 +522,74 @@ function App() {
     });
   }, []);
 
+  // --- Crypto Functions ---
+
+  const handleBuyCrypto = (assetId: string, usdAmount: number, assetPrice: number): boolean => {
+      const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
+      if (!checkingAccount || checkingAccount.balance < usdAmount) {
+          addNotification(NotificationType.CRYPTO, 'Purchase Failed', 'Insufficient funds in your checking account.');
+          return false;
+      }
+
+      const fee = usdAmount * CRYPTO_TRADE_FEE_PERCENT;
+      const usdAmountAfterFee = usdAmount - fee;
+      const cryptoAmount = usdAmountAfterFee / assetPrice;
+
+      // Update checking account balance
+      setAccounts(prev => prev.map(acc => acc.id === checkingAccount.id ? { ...acc, balance: acc.balance - usdAmount } : acc));
+
+      // Update crypto holdings
+      setCryptoHoldings(prev => {
+          const existingHolding = prev.find(h => h.assetId === assetId);
+          if (existingHolding) {
+              const totalAmount = existingHolding.amount + cryptoAmount;
+              const totalCost = (existingHolding.avgBuyPrice * existingHolding.amount) + usdAmountAfterFee;
+              const newAvgPrice = totalCost / totalAmount;
+              return prev.map(h => h.assetId === assetId ? { ...h, amount: totalAmount, avgBuyPrice: newAvgPrice } : h);
+          } else {
+              return [...prev, { assetId, amount: cryptoAmount, avgBuyPrice: assetPrice }];
+          }
+      });
+      
+      addNotification(NotificationType.CRYPTO, 'Purchase Successful', `You bought ${cryptoAmount.toFixed(6)} of ${assetId.toUpperCase()}.`);
+      return true;
+  };
+
+  const handleSellCrypto = (assetId: string, cryptoAmount: number, assetPrice: number): boolean => {
+      const holding = cryptoHoldings.find(h => h.assetId === assetId);
+      if (!holding || holding.amount < cryptoAmount) {
+          addNotification(NotificationType.CRYPTO, 'Sale Failed', 'Insufficient crypto balance.');
+          return false;
+      }
+      
+      const usdAmount = cryptoAmount * assetPrice;
+      const fee = usdAmount * CRYPTO_TRADE_FEE_PERCENT;
+      const usdAmountAfterFee = usdAmount - fee;
+
+      // Update checking account balance
+      setAccounts(prev => prev.map(acc => acc.type === 'Global Checking' ? { ...acc, balance: acc.balance + usdAmountAfterFee } : acc));
+
+      // Update crypto holdings
+      setCryptoHoldings(prev => {
+          const newAmount = holding.amount - cryptoAmount;
+          if (newAmount < 0.000001) { // Remove if dust
+              return prev.filter(h => h.assetId !== assetId);
+          }
+          return prev.map(h => h.assetId === assetId ? { ...h, amount: newAmount } : h);
+      });
+
+      addNotification(NotificationType.CRYPTO, 'Sale Successful', `You sold ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()} for ${usdAmountAfterFee.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}.`);
+      return true;
+  };
+  
+  // --- End Crypto Functions ---
+
   useEffect(() => {
     const intervalId = setInterval(updateTransactionStatuses, 2000); // Check every 2 seconds
     return () => clearInterval(intervalId);
   }, [updateTransactionStatuses]);
   
   useEffect(() => {
-    // FIX: Using `ReturnType<typeof setTimeout>` makes the type compatible with both Node.js and browser environments, resolving the "Cannot find namespace 'NodeJS'" error.
     let inactivityTimer: ReturnType<typeof setTimeout>;
 
     const resetTimer = () => {
@@ -351,21 +616,51 @@ function App() {
   }, [isAuthenticated, handleLogout]);
 
   const renderContent = () => {
+    const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+    const cryptoPortfolioValue = cryptoHoldings.reduce((total, holding) => {
+        const asset = cryptoAssets.find(a => a.id === holding.assetId);
+        return total + (asset ? asset.price * holding.amount : 0);
+    }, 0);
+
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard accountBalance={accountBalance} transactions={transactions} />;
+        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} />;
+      case 'accounts':
+        return <Accounts accounts={accounts} transactions={transactions} verificationLevel={verificationLevel} onUpdateAccountNickname={handleUpdateAccountNickname} />;
       case 'send':
-        return <SendMoneyFlow recipients={recipients} accountBalance={accountBalance} createTransaction={createTransaction} transactions={transactions} />;
+        return <SendMoneyFlow recipients={recipients} accounts={accounts} createTransaction={createTransaction} transactions={transactions} />;
       case 'recipients':
         return <Recipients recipients={recipients} addRecipient={addRecipient} />;
       case 'cards':
-        return <CardManagement card={cardDetails} transactions={INITIAL_CARD_TRANSACTIONS} onToggleFreeze={handleToggleFreeze} accountBalance={accountBalance} onAddFunds={addFunds} />;
+        return <CardManagement card={cardDetails} transactions={INITIAL_CARD_TRANSACTIONS} onToggleFreeze={handleToggleFreeze} accountBalance={totalBalance} onAddFunds={addFunds} />;
+      case 'crypto':
+        return <CryptoDashboard 
+          cryptoAssets={cryptoAssets} 
+          setCryptoAssets={setCryptoAssets}
+          holdings={cryptoHoldings} 
+          checkingAccount={accounts.find(acc => acc.type === 'Global Checking')} 
+          onBuy={handleBuyCrypto} 
+          onSell={handleSellCrypto}
+        />;
+      case 'services':
+        return <ServicesDashboard 
+          subscriptions={subscriptions} 
+          appleCardDetails={appleCardDetails}
+          appleCardTransactions={appleCardTransactions}
+          onPaySubscription={handlePaySubscription} 
+        />;
+      case 'loans':
+        return <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification}/>;
+      case 'insurance':
+        return <Insurance />;
       case 'history':
         return <ActivityLog transactions={transactions} />;
-      case 'settings':
-        return <Settings transferLimits={transferLimits} onUpdateLimits={setTransferLimits} />;
+      case 'support':
+          return <Support />;
+      case 'security':
+        return <Security transferLimits={transferLimits} onUpdateLimits={setTransferLimits} verificationLevel={verificationLevel} onVerificationComplete={setVerificationLevel} />;
       default:
-        return <Dashboard accountBalance={accountBalance} transactions={transactions} />;
+        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue}/>;
     }
   };
 

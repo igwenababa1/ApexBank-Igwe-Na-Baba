@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Recipient, Country } from '../types';
 import { AddRecipientModal } from './AddRecipientModal';
-import { ChevronDownIcon, ClipboardDocumentIcon, CheckCircleIcon, BankIcon, CreditCardIcon, WithdrawIcon } from './Icons';
+import { ChevronDownIcon, ClipboardDocumentIcon, CheckCircleIcon, BankIcon, CreditCardIcon, WithdrawIcon, getBankIcon, PencilIcon } from './Icons';
 
 interface RecipientsProps {
     recipients: Recipient[];
@@ -66,6 +66,7 @@ const AccountDetail: React.FC<{ label: string; value: string }> = ({ label, valu
 const RecipientCard: React.FC<{ recipient: Recipient }> = ({ recipient }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const { deliveryOptions, realDetails } = recipient;
+    const BankLogo = getBankIcon(recipient.bankName);
 
     return (
         <div className="bg-slate-200 rounded-2xl shadow-digital transition-shadow duration-300">
@@ -76,25 +77,11 @@ const RecipientCard: React.FC<{ recipient: Recipient }> = ({ recipient }) => {
             >
                 <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center font-bold text-slate-600 text-xl shadow-digital-inset">
-                        {recipient.fullName.charAt(0)}
+                        <BankLogo className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="font-bold text-slate-800 text-lg">{recipient.fullName}</p>
-                        <p className="text-sm text-slate-500">{recipient.bankName} &bull; {recipient.accountNumber}</p>
-                        <div className="flex items-center space-x-4 mt-2" aria-label="Available delivery methods">
-                            <div title="Bank Deposit" className={`transition-colors flex items-center space-x-1.5 ${deliveryOptions.bankDeposit ? 'text-slate-600' : 'text-slate-400 opacity-40'}`}>
-                                <BankIcon className="w-5 h-5" />
-                                <span className="text-xs font-medium">Bank Deposit</span>
-                            </div>
-                            <div title="Card Deposit" className={`transition-colors flex items-center space-x-1.5 ${deliveryOptions.cardDeposit ? 'text-slate-600' : 'text-slate-400 opacity-40'}`}>
-                                <CreditCardIcon className="w-5 h-5" />
-                                <span className="text-xs font-medium">Card Deposit</span>
-                            </div>
-                            <div title="Cash Pickup / Withdraw" className={`transition-colors flex items-center space-x-1.5 ${deliveryOptions.cashPickup ? 'text-slate-600' : 'text-slate-400 opacity-40'}`}>
-                                <WithdrawIcon className="w-5 h-5" />
-                                <span className="text-xs font-medium">Cash Pickup / Withdraw</span>
-                            </div>
-                        </div>
+                        <p className="font-bold text-slate-800 text-lg">{recipient.nickname || recipient.fullName}</p>
+                        <p className="text-sm text-slate-500">{recipient.nickname ? recipient.fullName : `${recipient.bankName} • ${recipient.accountNumber}`}</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-4">

@@ -1,8 +1,7 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionStatus } from '../types';
-import { CheckCircleIcon, ClockIcon, SearchIcon, XCircleIcon } from './Icons';
+import { CheckCircleIcon, ClockIcon, SearchIcon, XCircleIcon, DepositIcon, getBankIcon } from './Icons';
 
 interface ActivityLogProps {
   transactions: Transaction[];
@@ -36,7 +35,7 @@ const TransactionRow: React.FC<{ transaction: Transaction; searchTerm: string }>
   
   const isCredit = transaction.type === 'credit';
   const amount = isCredit ? transaction.sendAmount : transaction.sendAmount + transaction.fee;
-
+  const BankLogo = getBankIcon(transaction.recipient.bankName);
 
   return (
     <tr className="border-b border-slate-300 last:border-b-0">
@@ -44,12 +43,19 @@ const TransactionRow: React.FC<{ transaction: Transaction; searchTerm: string }>
         {transaction.statusTimestamps[TransactionStatus.SUBMITTED].toLocaleDateString()}
       </td>
       <td className="py-4 px-6">
-        <p className="font-semibold text-slate-800">
-            <Highlight text={isCredit ? 'Deposit' : transaction.recipient.fullName} highlight={searchTerm} />
-        </p>
-        <p className="text-xs text-slate-500">
-            <Highlight text={transaction.description} highlight={searchTerm} />
-        </p>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 shadow-digital-inset">
+            {isCredit ? <DepositIcon className="w-6 h-6 text-slate-500"/> : <BankLogo className="w-6 h-6"/>}
+          </div>
+          <div>
+            <p className="font-semibold text-slate-800">
+                <Highlight text={isCredit ? 'Deposit' : transaction.recipient.fullName} highlight={searchTerm} />
+            </p>
+            <p className="text-xs text-slate-500">
+                <Highlight text={transaction.description} highlight={searchTerm} />
+            </p>
+          </div>
+        </div>
       </td>
       <td className={`py-4 px-6 font-mono text-right ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
         {isCredit ? '+' : '-'} {amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}

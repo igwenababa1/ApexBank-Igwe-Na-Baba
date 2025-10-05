@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Recipient, Transaction } from '../types';
+import { Recipient, Transaction, Account } from '../types';
 import { FIXED_FEE, EXCHANGE_RATES, TRANSFER_PURPOSES, USER_PIN } from '../constants';
 import { LiveTransactionView } from './LiveTransactionView';
 import { SpinnerIcon, CheckCircleIcon, ExclamationTriangleIcon, KeypadIcon, BankIcon, CreditCardIcon, WithdrawIcon } from './Icons';
 
 interface SendMoneyFlowProps {
   recipients: Recipient[];
-  accountBalance: number;
-  transactions: Transaction[]; // For live tracking on success
+  accounts: Account[];
   createTransaction: (transaction: Omit<Transaction, 'id' | 'status' | 'estimatedArrival' | 'statusTimestamps' | 'type'>) => Transaction | null;
+  transactions: Transaction[];
 }
 
 // Stepper component
@@ -52,10 +52,12 @@ const Stepper: React.FC<{ steps: string[], currentStep: number }> = ({ steps, cu
 
 
 // Main Component
-export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accountBalance, createTransaction, transactions }) => {
+export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accounts, createTransaction, transactions }) => {
   const [step, setStep] = useState(0); // 0: Amount, 1: Security, 2: PIN, 3: Review, 4: Success
   
+  const availableSourceAccounts = accounts.filter(acc => acc.balance > 0);
   // Form State
+  const [sourceAccountId, setSourceAccountId] = useState<string>(availableSourceAccounts.length > 0 ? availableSourceAccounts[0].id : '');
   const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(recipients.length > 0 ? recipients[0] : null);
   const [sendAmount, setSendAmount] = useState('');
   const [purpose, setPurpose] = useState(TRANSFER_PURPOSES[0]);
@@ -67,12 +69,14 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
 
   // Transaction State
   const [createdTransaction, setCreatedTransaction] = useState<Transaction | null>(null);
+  
+  const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
 
   const numericSendAmount = parseFloat(sendAmount) || 0;
   const exchangeRate = selectedRecipient ? EXCHANGE_RATES[selectedRecipient.country.currency] : 0;
   const receiveAmount = numericSendAmount * exchangeRate;
   const totalCost = numericSendAmount + FIXED_FEE;
-  const isAmountInvalid = totalCost > accountBalance || numericSendAmount <= 0;
+  const isAmountInvalid = !sourceAccount || totalCost > sourceAccount.balance || numericSendAmount <= 0;
 
   const liveTransaction = useMemo(() => {
     if (!createdTransaction) return null;
@@ -93,9 +97,10 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
   };
 
   const handleConfirmAndSend = () => {
-    if (!selectedRecipient) return;
+    if (!selectedRecipient || !sourceAccount) return;
 
     const newTransaction = createTransaction({
+      accountId: sourceAccount.id,
       recipient: selectedRecipient,
       sendAmount: numericSendAmount,
       receiveAmount: receiveAmount,
@@ -114,6 +119,7 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
   const handleStartOver = () => {
     setStep(0);
     setSelectedRecipient(recipients.length > 0 ? recipients[0] : null);
+    setSourceAccountId(availableSourceAccounts.length > 0 ? availableSourceAccounts[0].id : '');
     setSendAmount('');
     setPurpose(TRANSFER_PURPOSES[0]);
     setSecurityAcknowledged(false);
@@ -131,6 +137,23 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
         return (
           <>
             <div className="space-y-6">
+               <div>
+                <label htmlFor="sourceAccount" className="block text-sm font-medium text-slate-700">Send From</label>
+                <select
+                  id="sourceAccount"
+                  value={sourceAccountId}
+                  onChange={e => setSourceAccountId(e.target.value)}
+                  className="mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400"
+                >
+                  {availableSourceAccounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.nickname || acc.type} ({acc.accountNumber}) - {acc.balance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                      </option>
+                  ))}
+                </select>
+                {availableSourceAccounts.length === 0 && <p className="mt-2 text-sm text-yellow-600">You have no accounts with a positive balance to send from.</p>}
+              </div>
+
               <div>
                 <label htmlFor="recipient" className="block text-sm font-medium text-slate-700">Recipient</label>
                 <select
@@ -139,44 +162,13 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
                   onChange={e => setSelectedRecipient(recipients.find(r => r.id === e.target.value) || null)}
                   className="mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400"
                 >
-                  {recipients.map(r => <option key={r.id} value={r.id}>{r.fullName} - {r.bankName}</option>)}
+                  {recipients.map(r => 
+                    <option key={r.id} value={r.id}>
+                      {r.nickname ? `${r.nickname} (${r.fullName})` : r.fullName} - {r.bankName}
+                    </option>
+                  )}
                 </select>
               </div>
-
-              {selectedRecipient && (
-                  <div className="p-4 rounded-lg shadow-digital-inset bg-slate-100/50 space-y-3 transition-all duration-300 animate-fade-in">
-                      <h4 className="text-sm font-bold text-slate-700">Recipient Details</h4>
-                      <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-500">Full Name</span>
-                          <span className="font-semibold text-slate-800">{selectedRecipient.fullName}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-500">Bank</span>
-                          <span className="font-semibold text-slate-800">{selectedRecipient.bankName}, {selectedRecipient.country.name}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-500">Account Number</span>
-                          <span className="font-mono text-sm text-slate-800">{selectedRecipient.accountNumber}</span>
-                      </div>
-                      <div className="pt-2 border-t border-slate-300">
-                          <span className="text-sm text-slate-500">Available Methods</span>
-                          <div className="flex items-center space-x-4 mt-1">
-                              <div title="Bank Deposit" className={`transition-colors flex items-center space-x-1 ${selectedRecipient.deliveryOptions.bankDeposit ? 'text-slate-600' : 'text-slate-400 opacity-40'}`}>
-                                  <BankIcon className="w-4 h-4" />
-                                  <span className="text-xs font-medium">Bank</span>
-                              </div>
-                              <div title="Card Deposit" className={`transition-colors flex items-center space-x-1 ${selectedRecipient.deliveryOptions.cardDeposit ? 'text-slate-600' : 'text-slate-400 opacity-40'}`}>
-                                  <CreditCardIcon className="w-4 h-4" />
-                                  <span className="text-xs font-medium">Card</span>
-                              </div>
-                              <div title="Cash Pickup / Withdraw" className={`transition-colors flex items-center space-x-1 ${selectedRecipient.deliveryOptions.cashPickup ? 'text-slate-600' : 'text-slate-400 opacity-40'}`}>
-                                  <WithdrawIcon className="w-4 h-4" />
-                                  <span className="text-xs font-medium">Cash</span>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              )}
 
               <div>
                 <label htmlFor="sendAmount" className="block text-sm font-medium text-slate-700">You Send</label>
@@ -193,7 +185,7 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
                     <span className="text-slate-500 font-semibold">USD</span>
                   </div>
                 </div>
-                {isAmountInvalid && numericSendAmount > 0 && <p className="mt-2 text-sm text-red-600">Insufficient balance.</p>}
+                {isAmountInvalid && numericSendAmount > 0 && <p className="mt-2 text-sm text-red-600">Insufficient balance in selected account.</p>}
               </div>
               <div>
                   <label htmlFor="purpose" className="block text-sm font-medium text-slate-700">Purpose of Transfer</label>
@@ -228,13 +220,6 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
                 Continue
               </button>
             </div>
-             <style>{`
-              @keyframes fade-in {
-                0% { opacity: 0; transform: translateY(-5px); }
-                100% { opacity: 1; transform: translateY(0); }
-              }
-              .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
-            `}</style>
           </>
         );
 
@@ -306,8 +291,12 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
             <h3 className="text-xl font-bold text-slate-800 text-center">Review Your Transfer</h3>
             <div className="p-4 bg-slate-200 rounded-lg shadow-digital-inset space-y-3 divide-y divide-slate-300">
                 <div className="pt-2">
+                    <span className="text-sm text-slate-500">From</span>
+                    <p className="font-semibold text-slate-800">{sourceAccount?.nickname || sourceAccount?.type} ({sourceAccount?.accountNumber})</p>
+                </div>
+                <div className="pt-3">
                     <span className="text-sm text-slate-500">To</span>
-                    <p className="font-semibold text-slate-800">{selectedRecipient?.fullName}</p>
+                    <p className="font-semibold text-slate-800">{selectedRecipient?.nickname ? `${selectedRecipient?.nickname} (${selectedRecipient?.fullName})` : selectedRecipient?.fullName}</p>
                     <p className="text-sm text-slate-600">{selectedRecipient?.bankName} ({selectedRecipient?.country.name})</p>
                 </div>
                  <div className="pt-3">
@@ -359,13 +348,13 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
               <div className="grid grid-cols-2 gap-4 items-start border-b border-slate-300 pb-4 mb-4">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">From</p>
-                  <p className="font-bold text-slate-800">Eleanor Vance</p>
-                  <p className="text-sm text-slate-600">ApexBank Global Checking</p>
-                  <p className="text-sm text-slate-500 font-mono">**** 1234</p>
+                  <p className="font-bold text-slate-800">{sourceAccount?.nickname || sourceAccount?.type}</p>
+                  <p className="text-sm text-slate-600">Eleanor Vance</p>
+                  <p className="text-sm text-slate-500 font-mono">{sourceAccount?.accountNumber}</p>
                 </div>
                 <div className="space-y-1 text-right">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">To</p>
-                  <p className="font-bold text-slate-800">{liveTransaction.recipient.fullName}</p>
+                  <p className="font-bold text-slate-800">{liveTransaction.recipient.nickname ? `${liveTransaction.recipient.nickname} (${liveTransaction.recipient.fullName})` : liveTransaction.recipient.fullName}</p>
                   <p className="text-sm text-slate-600">{liveTransaction.recipient.bankName}</p>
                   <p className="text-sm text-slate-500 font-mono">{liveTransaction.recipient.accountNumber}</p>
                 </div>

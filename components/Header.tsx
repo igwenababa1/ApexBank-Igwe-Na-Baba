@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ApexBankLogo, DashboardIcon, SendIcon, UserGroupIcon, LogoutIcon, ActivityIcon, CogIcon, CreditCardIcon, BellIcon, SpinnerIcon } from './Icons';
+import { ApexBankLogo, DashboardIcon, SendIcon, UserGroupIcon, LogoutIcon, ActivityIcon, CogIcon, CreditCardIcon, BellIcon, SpinnerIcon, LifebuoyIcon, CashIcon, QuestionMarkCircleIcon, WalletIcon, ChartBarIcon, ShoppingBagIcon } from './Icons';
 import { Notification } from '../types';
 import { NotificationsPanel } from './NotificationsPanel';
 
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'settings' | 'cards';
+type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services';
 
 interface HeaderProps {
   activeView: View;
@@ -65,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
     setTimeout(() => {
         onLogout();
         // No need to reset state, component will unmount
-    }, 30000); // 30 second delay
+    }, 1500); // 1.5 second delay
   };
 
 
@@ -86,10 +86,28 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                 onClick={() => setActiveView('dashboard')}
               />
               <NavItem
+                icon={<WalletIcon className="w-5 h-5" />}
+                label="Accounts"
+                isActive={activeView === 'accounts'}
+                onClick={() => setActiveView('accounts')}
+              />
+              <NavItem
                 icon={<SendIcon className="w-5 h-5" />}
                 label="Send Money"
                 isActive={activeView === 'send'}
                 onClick={() => setActiveView('send')}
+              />
+               <NavItem
+                icon={<ChartBarIcon className="w-5 h-5" />}
+                label="Crypto"
+                isActive={activeView === 'crypto'}
+                onClick={() => setActiveView('crypto')}
+              />
+               <NavItem
+                icon={<ShoppingBagIcon className="w-5 h-5" />}
+                label="Services"
+                isActive={activeView === 'services'}
+                onClick={() => setActiveView('services')}
               />
               <NavItem
                 icon={<UserGroupIcon className="w-5 h-5" />}
@@ -103,17 +121,35 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                 isActive={activeView === 'cards'}
                 onClick={() => setActiveView('cards')}
               />
+               <NavItem
+                icon={<CashIcon className="w-5 h-5" />}
+                label="Loans"
+                isActive={activeView === 'loans'}
+                onClick={() => setActiveView('loans')}
+              />
+              <NavItem
+                icon={<LifebuoyIcon className="w-5 h-5" />}
+                label="Insurance"
+                isActive={activeView === 'insurance'}
+                onClick={() => setActiveView('insurance')}
+              />
               <NavItem
                 icon={<ActivityIcon className="w-5 h-5" />}
                 label="History"
                 isActive={activeView === 'history'}
                 onClick={() => setActiveView('history')}
               />
+               <NavItem
+                icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
+                label="Support"
+                isActive={activeView === 'support'}
+                onClick={() => setActiveView('support')}
+              />
               <NavItem
                 icon={<CogIcon className="w-5 h-5" />}
-                label="Settings"
-                isActive={activeView === 'settings'}
-                onClick={() => setActiveView('settings')}
+                label="Security"
+                isActive={activeView === 'security'}
+                onClick={() => setActiveView('security')}
               />
             </nav>
             <div className="pl-4 flex items-center space-x-4">

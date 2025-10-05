@@ -1,3 +1,6 @@
+// FIX: Import React to make React types like `ComponentType` available in this file.
+import React from 'react';
+
 export enum TransactionStatus {
   SUBMITTED = 'Submitted',
   CONVERTING = 'Converting & Sending',
@@ -15,6 +18,9 @@ export enum NotificationType {
   TRANSACTION = 'transaction',
   SECURITY = 'security',
   CARD = 'card',
+  LOAN = 'loan',
+  CRYPTO = 'crypto',
+  SUBSCRIPTION = 'subscription',
 }
 
 export interface Notification {
@@ -46,6 +52,7 @@ export interface RealAccountDetails {
 export interface Recipient {
   id: string;
   fullName: string;
+  nickname?: string;
   bankName: string;
   accountNumber: string; // Masked account number for display
   country: Country;
@@ -55,7 +62,8 @@ export interface Recipient {
 
 
 export interface Transaction {
-  id: string;
+  id:string;
+  accountId: string; // The ID of the source/destination account
   recipient: Recipient;
   sendAmount: number;
   receiveAmount: number;
@@ -72,6 +80,13 @@ export interface Transaction {
   description: string;
   type: 'debit' | 'credit';
   purpose?: string;
+  chequeDetails?: {
+    chequeNumber?: string;
+    images: {
+      front: string;
+      back: string;
+    }
+  }
 }
 
 export interface Card {
@@ -107,4 +122,134 @@ export interface NewsArticle {
   title: string;
   summary: string;
   category: string;
+}
+
+export interface InsuranceProduct {
+  name: string;
+  description: string;
+  benefits: string[];
+}
+
+export interface LoanProduct {
+  id: string;
+  name: string;
+  description: string;
+  benefits: string[];
+  interestRate: {
+    min: number;
+    max: number;
+  };
+}
+
+export enum LoanApplicationStatus {
+  PENDING = 'Pending Review',
+  APPROVED = 'Approved',
+  REJECTED = 'Rejected',
+}
+
+export interface LoanApplication {
+  id: string;
+  loanProduct: LoanProduct;
+  amount: number;
+  term: number; // in months
+  status: LoanApplicationStatus;
+  submittedDate: Date;
+}
+
+export interface SupportTopic {
+  id: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+export interface SystemUpdate {
+  id: string;
+  title: string;
+  date: string;
+  description: string;
+  category: 'New Feature' | 'Improvement' | 'Maintenance';
+}
+
+export enum AccountType {
+  CHECKING = 'Global Checking',
+  SAVINGS = 'High-Yield Savings',
+  BUSINESS = 'Business Pro',
+}
+
+export enum VerificationLevel {
+  UNVERIFIED = 'Unverified',
+  LEVEL_1 = 'Level 1: Verified',
+  LEVEL_2 = 'Level 2: Verified+',
+}
+
+export interface Account {
+  id: string;
+  type: AccountType;
+  nickname?: string;
+  accountNumber: string; // Masked
+  balance: number;
+  features: string[];
+}
+
+// Crypto-specific types
+export interface CryptoAsset {
+  id: string;
+  name: string;
+  symbol: string;
+  icon: React.ComponentType<{ className?: string }>;
+  price: number;
+  change24h: number;
+  marketCap: number;
+  priceHistory: number[];
+}
+
+export interface CryptoHolding {
+  assetId: string;
+  amount: number;
+  avgBuyPrice: number;
+}
+
+export interface Order {
+    price: number;
+    size: number;
+}
+
+export interface Trade {
+    id: string;
+    price: number;
+    size: number;
+    time: string;
+    type: 'buy' | 'sell';
+}
+
+// Services and Subscriptions
+export enum SubscriptionServiceType {
+    INTERNET = 'Internet',
+    TV = 'TV',
+    SATELLITE = 'Satellite',
+}
+
+export interface SubscriptionService {
+    id: string;
+    provider: string;
+    plan: string;
+    amount: number;
+    dueDate: Date;
+    type: SubscriptionServiceType;
+    isPaid: boolean;
+}
+
+export interface AppleCardDetails {
+    lastFour: string;
+    balance: number;
+    creditLimit: number;
+    availableCredit: number;
+}
+
+export interface AppleCardTransaction {
+    id: string;
+    vendor: string;
+    category: string;
+    amount: number;
+    date: Date;
 }

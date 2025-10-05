@@ -1,6 +1,5 @@
-
-
-import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits } from './types';
+import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction } from './types';
+import { BtcIcon, EthIcon, ApxIcon } from './components/Icons';
 
 export const SUPPORTED_COUNTRIES: Country[] = [
   { code: 'US', name: 'United States', currency: 'USD' },
@@ -24,6 +23,7 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
   {
     id: 'rec_1',
     fullName: 'Jane Doe',
+    nickname: 'Design Contractor',
     bankName: 'Chase Bank',
     accountNumber: '**** **** **** 1234',
     country: SUPPORTED_COUNTRIES[0],
@@ -40,7 +40,8 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
   {
     id: 'rec_2',
     fullName: 'John Smith',
-    bankName: 'HSBC UK',
+    nickname: 'London Office Rent',
+    bankName: 'Bank of America',
     accountNumber: '**** **** **** 5678',
     country: SUPPORTED_COUNTRIES[1],
     deliveryOptions: {
@@ -50,9 +51,26 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
     },
     realDetails: {
       accountNumber: '1234567890125678',
-      swiftBic: 'HBUKGB4B',
+      swiftBic: 'BOFAGB22',
     }
   },
+  {
+    id: 'rec_3',
+    fullName: 'Peter Jones',
+    nickname: 'Office Supplies',
+    bankName: 'Wells Fargo',
+    accountNumber: '**** **** **** 9012',
+    country: SUPPORTED_COUNTRIES[0],
+    deliveryOptions: {
+        bankDeposit: true,
+        cardDeposit: true,
+        cashPickup: true,
+    },
+    realDetails: {
+        accountNumber: '5432109876549012',
+        swiftBic: 'WFBIUS6S',
+    }
+  }
 ];
 
 export const SELF_RECIPIENT: Recipient = {
@@ -73,11 +91,18 @@ export const SELF_RECIPIENT: Recipient = {
 };
 
 
+export const INITIAL_ACCOUNTS: Account[] = [
+    { id: 'acc_checking_1', type: AccountType.CHECKING, nickname: 'Main Checking', accountNumber: '**** 1234', balance: 7500, features: ['International Transfers', 'Debit Card', 'FDIC Insured'] },
+    { id: 'acc_savings_1', type: AccountType.SAVINGS, nickname: 'Emergency Fund', accountNumber: '**** 5678', balance: 2500, features: ['4.5% APY', 'Goal Setting', 'Automated Savings'] },
+    { id: 'acc_business_1', type: AccountType.BUSINESS, accountNumber: '**** 9012', balance: 0, features: ['Multi-user Access', 'Invoicing Tools', 'Expense Tracking'] },
+];
+
 const now = Date.now();
 
 export const INITIAL_TRANSACTIONS: Transaction[] = [
   {
     id: `txn_${now - 86400000}`,
+    accountId: 'acc_checking_1',
     recipient: INITIAL_RECIPIENTS[1],
     sendAmount: 1000,
     receiveAmount: 785.50,
@@ -97,6 +122,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
   },
   {
     id: `txn_${now - 3600000}`,
+    accountId: 'acc_checking_1',
     recipient: INITIAL_RECIPIENTS[0],
     sendAmount: 500,
     receiveAmount: 490.00,
@@ -112,6 +138,49 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     description: "Family support",
     type: 'debit',
     purpose: 'Family Support',
+  },
+  {
+    id: `txn_${now - 86400000 * 5}`,
+    accountId: 'acc_savings_1',
+    recipient: SELF_RECIPIENT,
+    sendAmount: 500,
+    receiveAmount: 500,
+    fee: 0,
+    exchangeRate: 1,
+    status: TransactionStatus.FUNDS_ARRIVED,
+    estimatedArrival: new Date(now - 86400000 * 5),
+    statusTimestamps: {
+        [TransactionStatus.SUBMITTED]: new Date(now - 86400000 * 5),
+        [TransactionStatus.FUNDS_ARRIVED]: new Date(now - 86400000 * 5),
+    },
+    description: "Initial Deposit",
+    type: 'credit',
+    purpose: 'Account Deposit',
+  },
+  {
+    id: `txn_${now - 86400000 * 10}`,
+    accountId: 'acc_checking_1',
+    recipient: SELF_RECIPIENT,
+    sendAmount: 1250.75,
+    receiveAmount: 1250.75,
+    fee: 0,
+    exchangeRate: 1,
+    status: TransactionStatus.FUNDS_ARRIVED,
+    estimatedArrival: new Date(now - 86400000 * 10),
+    statusTimestamps: {
+      [TransactionStatus.SUBMITTED]: new Date(now - 86400000 * 12),
+      [TransactionStatus.FUNDS_ARRIVED]: new Date(now - 86400000 * 10),
+    },
+    description: "Mobile Cheque Deposit #1234",
+    type: 'credit',
+    purpose: 'Account Deposit',
+    chequeDetails: {
+      chequeNumber: '1234',
+      images: {
+        front: 'https://placehold.co/600x250/E2E8F0/475569?text=Cheque+Front',
+        back: 'https://placehold.co/600x250/E2E8F0/475569?text=Cheque+Back',
+      }
+    }
   },
 ];
 
@@ -147,3 +216,88 @@ export const INITIAL_TRANSFER_LIMITS: TransferLimits = {
 };
 
 export const USER_PIN = '1234';
+
+// --- Crypto Constants ---
+
+const generatePriceHistory = (base: number, points: number, volatility: number): number[] => {
+    const history = [base];
+    let current = base;
+    for (let i = 1; i < points; i++) {
+        const change = (Math.random() - 0.5) * volatility * current;
+        current = Math.max(current + change, 0); // Ensure price doesn't go below 0
+        history.push(current);
+    }
+    return history;
+};
+
+
+export const INITIAL_CRYPTO_ASSETS: CryptoAsset[] = [
+    {
+        id: 'btc',
+        name: 'Bitcoin',
+        symbol: 'BTC',
+        icon: BtcIcon,
+        price: 68530.45,
+        change24h: 2.15,
+        marketCap: 1350000000000,
+        priceHistory: generatePriceHistory(68530.45, 50, 0.01),
+    },
+    {
+        id: 'eth',
+        name: 'Ethereum',
+        symbol: 'ETH',
+        icon: EthIcon,
+        price: 3550.12,
+        change24h: -1.23,
+        marketCap: 426000000000,
+        priceHistory: generatePriceHistory(3550.12, 50, 0.015),
+    },
+    {
+        id: 'apx',
+        name: 'ApexCoin',
+        symbol: 'APX',
+        icon: ApxIcon,
+        price: 1.25,
+        change24h: 5.78,
+        marketCap: 1250000000,
+        priceHistory: generatePriceHistory(1.25, 50, 0.02),
+    }
+];
+
+export const INITIAL_CRYPTO_HOLDINGS: CryptoHolding[] = [
+    {
+        assetId: 'btc',
+        amount: 0.05,
+        avgBuyPrice: 65000.00,
+    },
+    {
+        assetId: 'eth',
+        amount: 1.5,
+        avgBuyPrice: 3200.00,
+    }
+];
+
+export const CRYPTO_TRADE_FEE_PERCENT = 0.005; // 0.5% trade fee
+
+// --- Services Constants ---
+
+export const INITIAL_SUBSCRIPTIONS: SubscriptionService[] = [
+    { id: 'sub_1', provider: 'SpaceX Starlink', plan: 'Residential Standard', amount: 120.00, dueDate: new Date(now + 86400000 * 5), type: SubscriptionServiceType.SATELLITE, isPaid: false },
+    { id: 'sub_2', provider: 'Comcast Xfinity', plan: 'Gigabit Extra Internet', amount: 85.00, dueDate: new Date(now + 86400000 * 10), type: SubscriptionServiceType.INTERNET, isPaid: false },
+    { id: 'sub_3', provider: 'YouTube TV', plan: 'Base Plan + 4K Plus', amount: 82.99, dueDate: new Date(now + 86400000 * 12), type: SubscriptionServiceType.TV, isPaid: false },
+    { id: 'sub_4', provider: 'Netflix', plan: 'Premium', amount: 22.99, dueDate: new Date(now - 86400000 * 15), type: SubscriptionServiceType.TV, isPaid: true },
+];
+
+export const INITIAL_APPLE_CARD_DETAILS: AppleCardDetails = {
+    lastFour: '1005',
+    balance: 432.15,
+    creditLimit: 10000,
+    availableCredit: 9567.85,
+};
+
+export const INITIAL_APPLE_CARD_TRANSACTIONS: AppleCardTransaction[] = [
+    { id: 'act_1', vendor: 'Apple Store', category: 'Electronics', amount: 1199.00, date: new Date(now - 86400000 * 3) },
+    { id: 'act_2', vendor: 'Uber', category: 'Transport', amount: 24.50, date: new Date(now - 86400000 * 4) },
+    { id: 'act_3', vendor: 'Starbucks', category: 'Food & Drink', amount: 12.75, date: new Date(now - 86400000 * 4) },
+    { id: 'act_4', vendor: 'Whole Foods', category: 'Groceries', amount: 153.21, date: new Date(now - 86400000 * 6) },
+];
