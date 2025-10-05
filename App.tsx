@@ -3,8 +3,8 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
 import { Recipients } from './components/Recipients';
-import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile } from './types';
-import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE } from './constants';
+import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme } from './types';
+import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE, INITIAL_PLATFORM_SETTINGS, THEME_COLORS } from './constants';
 import { Welcome } from './components/Welcome';
 import { ProfileSignIn } from './components/ProfileSignIn';
 import { ActivityLog } from './components/ActivityLog';
@@ -18,6 +18,8 @@ import { ServicesDashboard } from './components/ServicesDashboard';
 import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
 import { InactivityModal } from './components/InactivityModal';
 import { TravelCheckIn } from './components/TravelCheckIn';
+import { PlatformFeatures } from './components/PlatformFeatures';
+import { DynamicIslandSimulator } from './components/DynamicIslandSimulator';
 import {
   sendTransactionalEmail,
   generateTransactionReceiptEmail,
@@ -149,7 +151,7 @@ const Insurance: React.FC = () => {
 };
 
 
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin';
+type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform';
 type AuthStatus = 'loggedOut' | 'profileSignIn' | 'loggedIn';
 
 const INACTIVITY_WARNING_TIMEOUT = 9 * 60 * 1000; // 9 minutes
@@ -178,6 +180,7 @@ function App() {
   const [appleCardTransactions, setAppleCardTransactions] = useState<AppleCardTransaction[]>(INITIAL_APPLE_CARD_TRANSACTIONS);
   const [travelPlans, setTravelPlans] = useState<TravelPlan[]>(INITIAL_TRAVEL_PLANS);
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>(INITIAL_SECURITY_SETTINGS);
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>(INITIAL_PLATFORM_SETTINGS);
   const [trustedDevices, setTrustedDevices] = useState<TrustedDevice[]>(INITIAL_TRUSTED_DEVICES);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
@@ -484,202 +487,165 @@ function App() {
     setTransactions(currentTransactions => {
       let hasChanged = false;
       const updatedTransactions = currentTransactions.map(tx => {
-        if (tx.status === TransactionStatus.FUNDS_ARRIVED) {
-          return tx;
-        }
+        if (tx.status === TransactionStatus.FUNDS_ARRIVED) return tx;
 
-        const now = Date.now();
-        let newStatus: TransactionStatus = tx.status;
-        const timestamps = tx.statusTimestamps;
+        let newStatus = tx.status;
+        let newTimestamps = { ...tx.statusTimestamps };
 
-        switch (tx.status) {
-          case TransactionStatus.SUBMITTED:
-            if (now - timestamps[TransactionStatus.SUBMITTED].getTime() > 3000) {
-              newStatus = TransactionStatus.CONVERTING;
-            }
-            break;
-          case TransactionStatus.CONVERTING:
-            const convertingTimestamp = timestamps[TransactionStatus.CONVERTING];
-            if (convertingTimestamp && now - convertingTimestamp.getTime() > 8000) {
-              newStatus = TransactionStatus.IN_TRANSIT;
-            }
-            break;
-          case TransactionStatus.IN_TRANSIT:
-            if (now >= tx.estimatedArrival.getTime()) {
-              newStatus = TransactionStatus.FUNDS_ARRIVED;
-            }
-            break;
-          default:
-            break;
-        }
-        
-        if (newStatus !== tx.status) {
+        const now = new Date();
+        const submittedTime = tx.statusTimestamps[TransactionStatus.SUBMITTED].getTime();
+        const timeDiffSeconds = (now.getTime() - submittedTime) / 1000;
+
+        // Progress from SUBMITTED -> CONVERTING after a few seconds
+        if (tx.status === TransactionStatus.SUBMITTED && timeDiffSeconds > 5 && !tx.statusTimestamps[TransactionStatus.CONVERTING]) {
+          newStatus = TransactionStatus.CONVERTING;
+          newTimestamps[TransactionStatus.CONVERTING] = now;
           hasChanged = true;
-          
+        }
+
+        // Progress from CONVERTING -> IN_TRANSIT
+        if (tx.status === TransactionStatus.CONVERTING && timeDiffSeconds > 15 && !tx.statusTimestamps[TransactionStatus.IN_TRANSIT]) {
+          newStatus = TransactionStatus.IN_TRANSIT;
+          newTimestamps[TransactionStatus.IN_TRANSIT] = now;
+          hasChanged = true;
+        }
+
+        // Progress from IN_TRANSIT -> FUNDS_ARRIVED (simulates a longer delay)
+        if (tx.status === TransactionStatus.IN_TRANSIT && now.getTime() >= tx.estimatedArrival.getTime()) {
+          newStatus = TransactionStatus.FUNDS_ARRIVED;
+          newTimestamps[TransactionStatus.FUNDS_ARRIVED] = now;
+          hasChanged = true;
+          // Create notification for funds arrival
           newNotifications.push({
-            id: `notif_${Date.now()}_${tx.id}`,
+            id: `notif_${tx.id}_arrival`,
             type: NotificationType.TRANSACTION,
-            title: `Transfer Update: ${newStatus}`,
-            message: `Your transfer to ${tx.recipient.fullName} is now "${newStatus}".`,
+            title: 'Funds Arrived!',
+            message: `Your transfer to ${tx.recipient.fullName} has been successfully delivered.`,
             timestamp: new Date(),
             read: false,
           });
 
-          if (newStatus === TransactionStatus.FUNDS_ARRIVED) {
-              const fullTxDetails = { ...tx, status: newStatus }; // Use updated status for email
-              const { subject, body } = generateFundsArrivedEmail(fullTxDetails, USER_NAME);
-              sendTransactionalEmail(USER_EMAIL, subject, body);
-          }
-
-          return { 
-            ...tx, 
-            status: newStatus, 
-            statusTimestamps: { ...tx.statusTimestamps, [newStatus]: new Date() } 
-          };
+          // Send email for funds arrival
+          const { subject, body } = generateFundsArrivedEmail(tx, USER_NAME);
+          sendTransactionalEmail(USER_EMAIL, subject, body);
         }
-        return tx;
-      });
-      
-      if (newNotifications.length > 0) {
-        setNotifications(prev => [...newNotifications, ...prev]);
-      }
 
-      return hasChanged ? updatedTransactions : currentTransactions;
+        return { ...tx, status: newStatus, statusTimestamps: newTimestamps };
+      });
+
+      if (hasChanged) {
+        // Add new notifications if any were created
+        if (newNotifications.length > 0) {
+          setNotifications(prev => [...newNotifications, ...prev.filter(n => !newNotifications.some(nn => nn.id === n.id))]);
+        }
+        return updatedTransactions;
+      }
+      return currentTransactions;
     });
-  }, []);
+  }, [USER_NAME]);
 
-  // --- Crypto Functions ---
+  useEffect(() => {
+    const interval = setInterval(updateTransactionStatuses, 2000); // Check every 2 seconds
+    return () => clearInterval(interval);
+  }, [updateTransactionStatuses]);
+  
+  const cryptoPortfolioValue = cryptoHoldings.reduce((total, holding) => {
+    const asset = cryptoAssets.find(a => a.id === holding.assetId);
+    return total + (asset ? holding.amount * asset.price : 0);
+  }, 0);
 
-  const handleBuyCrypto = (assetId: string, usdAmount: number, assetPrice: number): boolean => {
-      const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
-      if (!checkingAccount || checkingAccount.balance < usdAmount) {
-          addNotification(NotificationType.CRYPTO, 'Purchase Failed', 'Insufficient funds in your checking account.');
-          return false;
+  const onBuyCrypto = (assetId: string, usdAmount: number, assetPrice: number): boolean => {
+    const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
+    if (!checkingAccount || checkingAccount.balance < usdAmount) {
+      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient funds in your checking account.');
+      return false;
+    }
+
+    const fee = usdAmount * CRYPTO_TRADE_FEE_PERCENT;
+    const usdSpent = usdAmount + fee;
+    const cryptoReceived = usdAmount / assetPrice;
+
+    // Deduct from checking
+    setAccounts(prev => prev.map(acc => acc.id === checkingAccount.id ? { ...acc, balance: acc.balance - usdSpent } : acc));
+
+    // Update holdings
+    setCryptoHoldings(prev => {
+      const existing = prev.find(h => h.assetId === assetId);
+      if (existing) {
+        // Update avg buy price
+        const newTotalAmount = existing.amount + cryptoReceived;
+        const newAvgPrice = ((existing.avgBuyPrice * existing.amount) + (assetPrice * cryptoReceived)) / newTotalAmount;
+        return prev.map(h => h.assetId === assetId ? { ...h, amount: newTotalAmount, avgBuyPrice: newAvgPrice } : h);
+      } else {
+        return [...prev, { assetId, amount: cryptoReceived, avgBuyPrice: assetPrice }];
       }
+    });
 
-      const fee = usdAmount * CRYPTO_TRADE_FEE_PERCENT;
-      const usdAmountAfterFee = usdAmount - fee;
-      const cryptoAmount = usdAmountAfterFee / assetPrice;
-
-      // Update checking account balance
-      setAccounts(prev => prev.map(acc => acc.id === checkingAccount.id ? { ...acc, balance: acc.balance - usdAmount } : acc));
-
-      // Update crypto holdings
-      setCryptoHoldings(prev => {
-          const existingHolding = prev.find(h => h.assetId === assetId);
-          if (existingHolding) {
-              const totalAmount = existingHolding.amount + cryptoAmount;
-              const totalCost = (existingHolding.avgBuyPrice * existingHolding.amount) + usdAmountAfterFee;
-              const newAvgPrice = totalCost / totalAmount;
-              return prev.map(h => h.assetId === assetId ? { ...h, amount: totalAmount, avgBuyPrice: newAvgPrice } : h);
-          } else {
-              return [...prev, { assetId, amount: cryptoAmount, avgBuyPrice: assetPrice }];
-          }
-      });
-      
-      addNotification(NotificationType.CRYPTO, 'Purchase Successful', `You bought ${cryptoAmount.toFixed(6)} of ${assetId.toUpperCase()}.`);
-      return true;
-  };
-
-  const handleSellCrypto = (assetId: string, cryptoAmount: number, assetPrice: number): boolean => {
-      const holding = cryptoHoldings.find(h => h.assetId === assetId);
-      if (!holding || holding.amount < cryptoAmount) {
-          addNotification(NotificationType.CRYPTO, 'Sale Failed', 'Insufficient crypto balance.');
-          return false;
-      }
-      
-      const usdAmount = cryptoAmount * assetPrice;
-      const fee = usdAmount * CRYPTO_TRADE_FEE_PERCENT;
-      const usdAmountAfterFee = usdAmount - fee;
-
-      // Update checking account balance
-      setAccounts(prev => prev.map(acc => acc.type === 'Global Checking' ? { ...acc, balance: acc.balance + usdAmountAfterFee } : acc));
-
-      // Update crypto holdings
-      setCryptoHoldings(prev => {
-          const newAmount = holding.amount - cryptoAmount;
-          if (newAmount < 0.000001) { // Remove if dust
-              return prev.filter(h => h.assetId !== assetId);
-          }
-          return prev.map(h => h.assetId === assetId ? { ...h, amount: newAmount } : h);
-      });
-
-      addNotification(NotificationType.CRYPTO, 'Sale Successful', `You sold ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()} for ${usdAmountAfterFee.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}.`);
-      return true;
+    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully bought ${cryptoReceived.toFixed(6)} ${assetId.toUpperCase()}.`);
+    return true;
   };
   
-  // --- End Crypto Functions ---
-  
-  // --- Apple Card Functions ---
-  const handleUpdateSpendingLimits = (newLimits: SpendingLimit[]) => {
-      setAppleCardDetails(prev => ({
-          ...prev,
-          spendingLimits: newLimits
-      }));
-      addNotification(
-          NotificationType.CARD,
-          'Spending Limits Updated',
-          'Your Apple Card spending limits have been successfully updated.'
-      );
+  const onSellCrypto = (assetId: string, cryptoAmount: number, assetPrice: number): boolean => {
+    const holding = cryptoHoldings.find(h => h.assetId === assetId);
+    if (!holding || holding.amount < cryptoAmount) {
+      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient crypto balance.');
+      return false;
+    }
+
+    const usdReceived = cryptoAmount * assetPrice;
+    const fee = usdReceived * CRYPTO_TRADE_FEE_PERCENT;
+    const usdCredited = usdReceived - fee;
+    
+    // Add to checking account
+    setAccounts(prev => prev.map(acc => acc.type === 'Global Checking' ? { ...acc, balance: acc.balance + usdCredited } : acc));
+
+    // Update holdings
+    setCryptoHoldings(prev => prev.map(h => h.assetId === assetId ? { ...h, amount: h.amount - cryptoAmount } : h).filter(h => h.amount > 0.000001));
+
+    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully sold ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()}.`);
+    return true;
   };
 
-  const handleUpdateTransactionCategory = (transactionId: string, newCategory: SpendingCategory) => {
-      setAppleCardTransactions(prev => 
-          prev.map(tx => tx.id === transactionId ? { ...tx, category: newCategory } : tx)
-      );
-  };
-  // --- End Apple Card Functions ---
-
-  // --- Travel Check-In Functions ---
   const addTravelPlan = (country: Country, startDate: Date, endDate: Date) => {
     const newPlan: TravelPlan = {
       id: `travel_${Date.now()}`,
       country,
       startDate,
       endDate,
-      status: TravelPlanStatus.UPCOMING, // Will be updated by effect
+      status: new Date() >= startDate && new Date() <= endDate ? TravelPlanStatus.ACTIVE : (new Date() < startDate ? TravelPlanStatus.UPCOMING : TravelPlanStatus.COMPLETED)
     };
     setTravelPlans(prev => [...prev, newPlan].sort((a,b) => a.startDate.getTime() - b.startDate.getTime()));
-    addNotification(
-      NotificationType.TRAVEL,
-      'Travel Plan Added',
-      `Your travel notice for ${country.name} has been successfully registered.`
-    );
+    addNotification(NotificationType.TRAVEL, "Travel Plan Added", `Your trip to ${country.name} has been successfully registered.`);
   };
-  // --- End Travel Check-In Functions ---
-  
-  // --- Security Functions ---
-    const handleUpdateSecuritySettings = (newSettings: Partial<SecuritySettings>) => {
-      setSecuritySettings(prev => ({ ...prev, ...newSettings }));
-      const [key, value] = Object.entries(newSettings)[0];
-      const featureName = key === 'mfaEnabled' ? 'Two-Factor Authentication' : 'Biometric Login';
-       addNotification(
-            NotificationType.SECURITY,
-            `Security Setting Updated`,
-            `${featureName} has been ${value ? 'enabled' : 'disabled'}.`
-        );
-    };
 
-    const handleRevokeDevice = (deviceId: string) => {
-      setTrustedDevices(prev => prev.filter(d => d.id !== deviceId));
-      addNotification(
-        NotificationType.SECURITY,
-        'Device Access Revoked',
-        `Access has been revoked for one of your trusted devices.`
-      );
-    };
-  // --- End Security Functions ---
+  const handleUpdateTheme = (theme: PlatformTheme) => {
+    setPlatformSettings(prev => ({...prev, theme}));
+    const root = document.documentElement;
+    const colors = THEME_COLORS[theme];
+    for (const [key, value] of Object.entries(colors)) {
+        root.style.setProperty(`--color-primary-${key}`, value);
+    }
+  };
+
+  const handleUpdateSpendingLimits = (limits: SpendingLimit[]) => {
+    setAppleCardDetails(prev => ({...prev, spendingLimits: limits}));
+    addNotification(NotificationType.CARD, 'Spending Limits Updated', 'Your Apple Card spending limits have been successfully updated.');
+  };
+  
+  const handleUpdateTransactionCategory = (transactionId: string, category: SpendingCategory) => {
+    setAppleCardTransactions(prev => prev.map(tx => tx.id === transactionId ? {...tx, category} : tx));
+  };
+  
+  const inProgressTransaction = transactions.find(tx => tx.status !== TransactionStatus.FUNDS_ARRIVED);
 
 
   useEffect(() => {
-    const intervalId = setInterval(updateTransactionStatuses, 2000); // Check every 2 seconds
-    return () => clearInterval(intervalId);
-  }, [updateTransactionStatuses]);
+    handleUpdateTheme(platformSettings.theme);
+  }, [platformSettings.theme]);
   
   const resetInactivityTimer = useCallback(() => {
     clearTimeout(inactivityTimerRef.current);
     setShowInactivityModal(false);
-
     if (authStatus === 'loggedIn') {
       inactivityTimerRef.current = window.setTimeout(() => {
         setShowInactivityModal(true);
@@ -688,116 +654,157 @@ function App() {
   }, [authStatus]);
 
   useEffect(() => {
-    if (authStatus === 'loggedIn') {
-      window.addEventListener('mousemove', resetInactivityTimer);
-      window.addEventListener('keypress', resetInactivityTimer);
-      resetInactivityTimer();
-    }
+    resetInactivityTimer();
+    window.addEventListener('mousemove', resetInactivityTimer);
+    window.addEventListener('keydown', resetInactivityTimer);
+    window.addEventListener('click', resetInactivityTimer);
 
     return () => {
       clearTimeout(inactivityTimerRef.current);
       window.removeEventListener('mousemove', resetInactivityTimer);
-      window.removeEventListener('keypress', resetInactivityTimer);
+      window.removeEventListener('keydown', resetInactivityTimer);
+      window.removeEventListener('click', resetInactivityTimer);
     };
-  }, [authStatus, resetInactivityTimer]);
+  }, [resetInactivityTimer]);
+  
 
   const renderContent = () => {
-    const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-    const cryptoPortfolioValue = cryptoHoldings.reduce((total, holding) => {
-        const asset = cryptoAssets.find(a => a.id === holding.assetId);
-        return total + (asset ? asset.price * holding.amount : 0);
-    }, 0);
+    switch (authStatus) {
+      case 'loggedOut':
+        return <Welcome onLogin={handleCredentialsSuccess} />;
+      case 'profileSignIn':
+        return <ProfileSignIn user={USER_PROFILE} onEnterDashboard={handleEnterDashboard} />;
+      case 'loggedIn':
+        const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
+        let viewContent;
+        switch (activeView) {
+          case 'dashboard':
+            viewContent = <Dashboard 
+              accounts={accounts} 
+              transactions={transactions} 
+              setActiveView={setActiveView}
+              recipients={recipients}
+              createTransaction={createTransaction}
+              cryptoPortfolioValue={cryptoPortfolioValue}
+              travelPlans={travelPlans}
+            />;
+            break;
+          case 'send':
+            viewContent = <SendMoneyFlow
+              recipients={recipients} 
+              accounts={accounts} 
+              createTransaction={createTransaction}
+              transactions={transactions}
+              securitySettings={securitySettings}
+              hapticsEnabled={platformSettings.hapticsEnabled}
+            />;
+            break;
+          case 'recipients':
+            viewContent = <Recipients recipients={recipients} addRecipient={addRecipient} />;
+            break;
+          case 'history':
+            viewContent = <ActivityLog transactions={transactions} />;
+            break;
+          case 'security':
+            viewContent = <Security 
+              transferLimits={transferLimits} 
+              onUpdateLimits={setTransferLimits} 
+              verificationLevel={verificationLevel}
+              onVerificationComplete={setVerificationLevel}
+              securitySettings={securitySettings}
+              onUpdateSecuritySettings={(s) => setSecuritySettings(prev => ({...prev, ...s}))}
+              trustedDevices={trustedDevices}
+              onRevokeDevice={(id) => setTrustedDevices(prev => prev.filter(d => d.id !== id))}
+            />;
+            break;
+          case 'cards':
+            viewContent = <CardManagement
+                card={cardDetails}
+                transactions={INITIAL_CARD_TRANSACTIONS}
+                onToggleFreeze={handleToggleFreeze}
+                accountBalance={checkingAccount?.balance || 0}
+                onAddFunds={addFunds}
+            />;
+            break;
+          case 'insurance':
+            viewContent = <Insurance />;
+            break;
+          case 'loans':
+            viewContent = <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification} />;
+            break;
+          case 'support':
+            viewContent = <Support />;
+            break;
+          case 'accounts':
+            viewContent = <Accounts 
+              accounts={accounts} 
+              transactions={transactions} 
+              verificationLevel={verificationLevel} 
+              onUpdateAccountNickname={handleUpdateAccountNickname}
+            />;
+            break;
+          case 'crypto':
+            viewContent = <CryptoDashboard 
+              cryptoAssets={cryptoAssets}
+              setCryptoAssets={setCryptoAssets}
+              holdings={cryptoHoldings}
+              checkingAccount={checkingAccount}
+              onBuy={onBuyCrypto}
+              onSell={onSellCrypto}
+            />;
+            break;
+          case 'services':
+            viewContent = <ServicesDashboard 
+              subscriptions={subscriptions}
+              appleCardDetails={appleCardDetails}
+              appleCardTransactions={appleCardTransactions}
+              onPaySubscription={handlePaySubscription}
+              onUpdateSpendingLimits={handleUpdateSpendingLimits}
+              onUpdateTransactionCategory={handleUpdateTransactionCategory}
+            />;
+            break;
+          case 'checkin':
+            viewContent = <TravelCheckIn travelPlans={travelPlans} addTravelPlan={addTravelPlan} />;
+            break;
+          case 'platform':
+            viewContent = <PlatformFeatures settings={platformSettings} onUpdateSettings={(s) => setPlatformSettings(prev => ({...prev, ...s}))} />;
+            break;
+          default:
+            viewContent = <Dashboard 
+              accounts={accounts} 
+              transactions={transactions} 
+              setActiveView={setActiveView}
+              recipients={recipients}
+              createTransaction={createTransaction}
+              cryptoPortfolioValue={cryptoPortfolioValue}
+              travelPlans={travelPlans}
+            />;
+        }
 
-    switch (activeView) {
-      case 'dashboard':
-        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
-      case 'accounts':
-        return <Accounts accounts={accounts} transactions={transactions} verificationLevel={verificationLevel} onUpdateAccountNickname={handleUpdateAccountNickname} />;
-      case 'send':
-        return <SendMoneyFlow recipients={recipients} accounts={accounts} createTransaction={createTransaction} transactions={transactions} />;
-      case 'recipients':
-        return <Recipients recipients={recipients} addRecipient={addRecipient} />;
-      case 'cards':
-        return <CardManagement card={cardDetails} transactions={INITIAL_CARD_TRANSACTIONS} onToggleFreeze={handleToggleFreeze} accountBalance={totalBalance} onAddFunds={addFunds} />;
-      case 'crypto':
-        return <CryptoDashboard 
-          cryptoAssets={cryptoAssets} 
-          setCryptoAssets={setCryptoAssets}
-          holdings={cryptoHoldings} 
-          checkingAccount={accounts.find(acc => acc.type === 'Global Checking')} 
-          onBuy={handleBuyCrypto} 
-          onSell={handleSellCrypto}
-        />;
-      case 'services':
-        return <ServicesDashboard 
-          subscriptions={subscriptions} 
-          appleCardDetails={appleCardDetails}
-          appleCardTransactions={appleCardTransactions}
-          onPaySubscription={handlePaySubscription}
-          onUpdateSpendingLimits={handleUpdateSpendingLimits}
-          onUpdateTransactionCategory={handleUpdateTransactionCategory}
-        />;
-      case 'checkin':
-        return <TravelCheckIn travelPlans={travelPlans} addTravelPlan={addTravelPlan} />;
-      case 'loans':
-        return <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification}/>;
-      case 'insurance':
-        return <Insurance />;
-      case 'history':
-        return <ActivityLog transactions={transactions} />;
-      case 'support':
-          return <Support />;
-      case 'security':
-        return <Security 
-          transferLimits={transferLimits} 
-          onUpdateLimits={setTransferLimits} 
-          verificationLevel={verificationLevel} 
-          onVerificationComplete={setVerificationLevel}
-          securitySettings={securitySettings}
-          onUpdateSecuritySettings={handleUpdateSecuritySettings}
-          trustedDevices={trustedDevices}
-          onRevokeDevice={handleRevokeDevice}
-        />;
+        return (
+          <div className="bg-slate-300 min-h-screen">
+            <Header
+              activeView={activeView}
+              setActiveView={setActiveView}
+              onLogout={handleInitiateLogout}
+              notifications={notifications}
+              onMarkNotificationsAsRead={markNotificationsAsRead}
+            />
+            <DynamicIslandSimulator transaction={inProgressTransaction || null} />
+            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+              {viewContent}
+            </main>
+             {isLogoutModalOpen && <LogoutConfirmationModal onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleConfirmLogout} />}
+             {showInactivityModal && <InactivityModal onLogout={handleConfirmLogout} onStayLoggedIn={resetInactivityTimer} countdownStart={INACTIVITY_MODAL_COUNTDOWN} />}
+          </div>
+        );
       default:
-        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
+        return null;
     }
   };
 
-  if (authStatus === 'loggedOut') {
-    return <Welcome onLogin={handleCredentialsSuccess} />;
-  }
-  
-  if (authStatus === 'profileSignIn') {
-    return <ProfileSignIn user={USER_PROFILE} onEnterDashboard={handleEnterDashboard} />;
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-200">
-      <Header 
-        activeView={activeView} 
-        setActiveView={setActiveView} 
-        onLogout={handleInitiateLogout}
-        notifications={notifications}
-        onMarkNotificationsAsRead={markNotificationsAsRead}
-      />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderContent()}
-      </main>
-      {isLogoutModalOpen && (
-        <LogoutConfirmationModal
-          onClose={() => setIsLogoutModalOpen(false)}
-          onConfirm={handleConfirmLogout}
-        />
-      )}
-      {showInactivityModal && (
-        <InactivityModal
-          onStayLoggedIn={resetInactivityTimer}
-          onLogout={handleConfirmLogout}
-          countdownStart={INACTIVITY_MODAL_COUNTDOWN}
-        />
-      )}
-    </div>
-  );
+  return <div className="font-sans antialiased">{renderContent()}</div>;
 }
 
+// FIX: Add default export for the App component.
 export default App;

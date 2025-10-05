@@ -224,60 +224,60 @@ export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, se
                 ))}
             </div>
         </div>
-
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2 grid grid-cols-1 gap-8">
-                <QuickTransfer
-                    accounts={accounts}
-                    recipients={recipients}
-                    createTransaction={createTransaction}
-                />
+        {/* Left column */}
+        <div className="lg:col-span-2 space-y-8">
+          <QuickTransfer
+            accounts={accounts}
+            recipients={recipients}
+            createTransaction={createTransaction}
+          />
+          <div className="bg-slate-200 rounded-2xl shadow-digital">
+            <h2 className="text-xl font-bold text-slate-800 p-6 border-b border-slate-300">Recent Transactions</h2>
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-500 uppercase">
+                        <tr>
+                            <th scope="col" className="py-3 px-6">Details</th>
+                            <th scope="col" className="py-3 px-6">Amount</th>
+                            <th scope="col" className="py-3 px-6">Status</th>
+                            <th scope="col" className="py-3 px-6">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.slice(0, 5).map(tx => <TransactionRow key={tx.id} transaction={tx} />)}
+                    </tbody>
+                </table>
             </div>
-            <div className="lg:col-span-1 space-y-8">
-                 <div className="bg-slate-200 rounded-2xl shadow-digital p-6">
-                    <div className="flex items-center space-x-3 mb-2">
-                        <div className="p-2 bg-slate-200 rounded-md shadow-digital">
-                            <ChartBarIcon className="w-5 h-5 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-800">Crypto Portfolio</h3>
-                    </div>
-                    <p className="text-sm text-slate-500">Total value of your digital assets.</p>
-                    <p className="text-3xl font-bold text-slate-800 mt-2">
-                        {isBalanceVisible ? cryptoPortfolioValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '$ ********'}
-                    </p>
-                     <div className="text-sm font-semibold flex items-center text-green-600 mt-1">
-                        <TrendingUpIcon className="w-4 h-4 mr-1"/>
-                        <span>+5.2% (24h)</span>
-                    </div>
-                    <button 
-                        onClick={() => setActiveView('crypto')}
-                        className="w-full mt-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                        Go to Trading
-                    </button>
-                </div>
-                <CurrencyConverter />
-            </div>
+          </div>
         </div>
 
-
-      <div className="bg-slate-200 rounded-2xl shadow-digital">
-        <h2 className="text-xl font-bold text-slate-800 p-6 border-b border-slate-300">Recent Transactions</h2>
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-                <thead className="text-xs text-slate-500 uppercase">
-                    <tr>
-                        <th scope="col" className="py-3 px-6">Details</th>
-                        <th scope="col" className="py-3 px-6">Amount</th>
-                        <th scope="col" className="py-3 px-6">Status</th>
-                        <th scope="col" className="py-3 px-6">Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {transactions.slice(0, 5).map(tx => <TransactionRow key={tx.id} transaction={tx} />)}
-                </tbody>
-            </table>
+        {/* Right column */}
+        <div className="lg:col-span-1 space-y-8">
+            <div className="bg-slate-200 rounded-2xl shadow-digital p-6">
+                <div className="flex items-center space-x-3 mb-2">
+                    <div className="p-2 bg-slate-200 rounded-md shadow-digital">
+                        <ChartBarIcon className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800">Crypto Portfolio</h3>
+                </div>
+                <p className="text-sm text-slate-500">Total value of your digital assets.</p>
+                <p className="text-3xl font-bold text-slate-800 mt-2">
+                    {isBalanceVisible ? cryptoPortfolioValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '$ ********'}
+                </p>
+                 <div className="text-sm font-semibold flex items-center text-green-600 mt-1">
+                    <TrendingUpIcon className="w-4 h-4 mr-1"/>
+                    <span>+5.2% (24h)</span>
+                </div>
+                <button 
+                    onClick={() => setActiveView('crypto')}
+                    className="w-full mt-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                    Go to Trading
+                </button>
+            </div>
+            <CurrencyConverter />
         </div>
       </div>
 

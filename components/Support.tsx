@@ -1,7 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { SystemUpdate } from '../types';
 import { getSystemUpdates, getSupportAnswer } from '../services/geminiService';
-import { SearchIcon, SpinnerIcon, InfoIcon, SparklesIcon, CheckCircleIcon, LightBulbIcon } from './Icons';
+import { SearchIcon, SpinnerIcon, InfoIcon, SparklesIcon, CheckCircleIcon, LightBulbIcon, UserCircleIcon, ArrowsRightLeftIcon, ShieldCheckIcon, CreditCardIcon } from './Icons';
 
 const SystemUpdateCard: React.FC<{ update: SystemUpdate }> = ({ update }) => {
     const categoryStyles = {
@@ -38,6 +38,13 @@ const FormattedAnswer: React.FC<{ text: string }> = ({ text }) => {
     return <div className="space-y-2 text-sm text-slate-700">{paragraphs}</div>;
 };
 
+const supportTopics = [
+    { title: "My Account", icon: UserCircleIcon, query: "How do I update my profile?" },
+    { title: "Transfers", icon: ArrowsRightLeftIcon, query: "What are the transfer limits?" },
+    { title: "Security", icon: ShieldCheckIcon, query: "How to enable two-factor authentication?" },
+    { title: "Cards & Payments", icon: CreditCardIcon, query: "How do I freeze my card?" },
+];
+
 
 export const Support: React.FC = () => {
     const [updates, setUpdates] = useState<SystemUpdate[]>([]);
@@ -59,18 +66,27 @@ export const Support: React.FC = () => {
         fetchUpdates();
     }, []);
 
-    const handleSearch = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!query.trim()) return;
+    const searchForAnswer = async (searchQuery: string) => {
+        if (!searchQuery.trim()) return;
         
         setIsLoadingAnswer(true);
         setAnswerError(false);
         setAnswer('');
         
-        const { answer, isError } = await getSupportAnswer(query);
+        const { answer, isError } = await getSupportAnswer(searchQuery);
         setAnswer(answer);
         setAnswerError(isError);
         setIsLoadingAnswer(false);
+    };
+    
+    const handleSearch = async (e: FormEvent) => {
+        e.preventDefault();
+        searchForAnswer(query);
+    };
+    
+    const handleTopicClick = (topicQuery: string) => {
+        setQuery(topicQuery);
+        searchForAnswer(topicQuery);
     };
 
     return (
@@ -80,8 +96,24 @@ export const Support: React.FC = () => {
                 <p className="text-sm text-slate-500 mt-1">Get instant answers and stay updated on the latest news from ApexBank.</p>
             </div>
             
+            <div className="text-center mb-8">
+                <h3 className="text-xl font-bold text-slate-800">Frequently Asked Topics</h3>
+                <p className="text-sm text-slate-500 mt-1">Select a topic or ask your own question below.</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {supportTopics.map(topic => (
+                    <button key={topic.title} onClick={() => handleTopicClick(topic.query)} className="group bg-slate-200 p-4 rounded-xl shadow-digital hover:shadow-digital-inset text-center transition-all duration-300 transform hover:scale-105">
+                        <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto shadow-digital group-hover:shadow-digital-inset transition-all">
+                            <topic.icon className="w-6 h-6 text-primary" />
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-slate-700">{topic.title}</p>
+                    </button>
+                ))}
+            </div>
+
             <div className="bg-slate-200 rounded-2xl shadow-digital p-6">
-                <h3 className="text-xl font-bold text-slate-800 mb-2">How can we help?</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Ask our AI Assistant</h3>
                 <form onSubmit={handleSearch} className="flex items-center space-x-2">
                     <div className="relative flex-grow">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

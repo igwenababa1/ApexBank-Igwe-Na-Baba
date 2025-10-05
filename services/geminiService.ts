@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { NewsArticle, InsuranceProduct, LoanProduct, SystemUpdate, AccountType, VerificationLevel } from '../types';
 
 // FIX: Conditionally initialize the Gemini AI client only if an API key is available.
@@ -20,7 +20,6 @@ export interface BankingTipResult {
 
 // In-memory cache for banking tips to avoid redundant API calls.
 const tipCache = new Map<string, BankingTipResult>();
-const introNoteCacheKey = 'bankIntroNote';
 
 export const getCountryBankingTip = async (countryName: string): Promise<BankingTipResult> => {
   // Return cached tip if available.
@@ -39,7 +38,7 @@ export const getCountryBankingTip = async (countryName: string): Promise<Banking
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: `Provide a very short, one-sentence tip for sending money to a bank account in ${countryName}. For example, for Germany mention IBAN, for the UK mention Sort Code. Be concise and helpful.`,
       config: {
@@ -54,12 +53,23 @@ export const getCountryBankingTip = async (countryName: string): Promise<Banking
     tipCache.set(countryName, result);
     return result;
   } catch (error) {
-    console.error("Error fetching banking tip from Gemini:", error);
-    // Do not cache errors to allow for retries.
-    return {
-      tip: `Could not fetch banking tips at the moment. Please ensure you have the correct details.`,
-      isError: true,
-    };
+    const errorString = JSON.stringify(error);
+    const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+
+    if (!isRateLimitError) {
+      console.error("Error fetching banking tip from Gemini:", error);
+    }
+    
+    let tip: string;
+    if (isRateLimitError) {
+        tip = `AI-powered banking tips are currently unavailable due to high demand. Please use standard banking information for ${countryName}.`;
+    } else {
+        tip = `Could not fetch banking tips at this time. Please ensure you have the correct details for ${countryName}.`;
+    }
+    const errorResult: BankingTipResult = { tip, isError: true };
+    // Cache all errors to prevent repeated calls during a session.
+    tipCache.set(countryName, errorResult);
+    return errorResult;
   }
 };
 
@@ -68,21 +78,24 @@ export interface BankIntroNoteResult {
   isError: boolean;
 }
 
+// FIX: Create a dedicated cache for the intro note to improve clarity and avoid potential conflicts.
+const introNoteCache = new Map<string, BankIntroNoteResult>();
+const introNoteCacheKey = 'bankIntroNote';
+
 export const getBankIntroNote = async (): Promise<BankIntroNoteResult> => {
-  if (tipCache.has(introNoteCacheKey)) {
-    const cachedResult = tipCache.get(introNoteCacheKey)!;
-    return { note: cachedResult.tip, isError: cachedResult.isError };
+  if (introNoteCache.has(introNoteCacheKey)) {
+    return introNoteCache.get(introNoteCacheKey)!;
   }
 
   if (!ai) {
     const fallbackNote = "Experience the future of global finance. ApexBank offers seamless international transfers with unparalleled speed, transparency, and bank-grade security, empowering you to move money with confidence.";
     const result: BankIntroNoteResult = { note: fallbackNote, isError: false };
-    tipCache.set(introNoteCacheKey, { tip: result.note, isError: result.isError });
+    introNoteCache.set(introNoteCacheKey, result);
     return result;
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: "You are the AI strategist for ApexBank, a modern fintech specializing in fast, secure, and transparent international money transfers. Write a short, intelligent, and welcoming note (2-3 sentences) for our landing page. The note should highlight why a user should choose us. Mention key themes like global reach, speed, and bank-grade security without using a boring list. The tone should be confident, modern, and inspiring.",
       config: {
@@ -92,25 +105,26 @@ export const getBankIntroNote = async (): Promise<BankIntroNoteResult> => {
     });
     
     const result: BankIntroNoteResult = { note: response.text, isError: false };
-    tipCache.set(introNoteCacheKey, { tip: result.note, isError: result.isError });
+    introNoteCache.set(introNoteCacheKey, result);
     return result;
   } catch (error) {
-    console.error("Error fetching bank intro note from Gemini:", error);
-    
-    const errorString = (error as Error).toString();
-    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-        const rateLimitNote = "Our AI is currently experiencing high demand. In the meantime, experience the future of global finance with ApexBank's seamless international transfers, offering unparalleled speed and bank-grade security.";
-        const result = { note: rateLimitNote, isError: true };
-        // Cache the rate-limited response to avoid retries for this session.
-        tipCache.set(introNoteCacheKey, { tip: result.note, isError: result.isError });
-        return result;
-    }
+    const errorString = JSON.stringify(error);
+    const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
 
-    // Generic error fallback
-    return {
-      note: `We're currently experiencing high traffic. Our mission is to provide seamless global finance with top-tier security. We invite you to explore how.`,
-      isError: true,
-    };
+    if (!isRateLimitError) {
+      console.error("Error fetching bank intro note from Gemini:", error);
+    }
+    
+    let note: string;
+    if (isRateLimitError) {
+        note = "Our AI is currently experiencing high demand. In the meantime, experience the future of global finance with ApexBank's seamless international transfers, offering unparalleled speed and bank-grade security.";
+    } else {
+        note = `We're currently experiencing high traffic. Our mission is to provide seamless global finance with top-tier security. We invite you to explore how.`;
+    }
+    const errorResult: BankIntroNoteResult = { note, isError: true };
+    // Cache all errors to prevent repeated calls during a session.
+    introNoteCache.set(introNoteCacheKey, errorResult);
+    return errorResult;
   }
 };
 
@@ -142,7 +156,7 @@ export const getFinancialNews = async (): Promise<FinancialNewsResult> => {
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: "Generate 3 synthetic, brief financial news headlines and summaries relevant to international finance and currency exchange. For each, provide a title, a short summary (1-2 sentences), and a category like 'Market Analysis', 'Currency Update', or 'Economic Outlook'. Return ONLY a valid JSON array of objects, with no surrounding text or markdown formatting. The format should be exactly: [{\"title\": \"...\", \"summary\": \"...\", \"category\": \"...\"}, ...].",
     });
@@ -160,12 +174,16 @@ export const getFinancialNews = async (): Promise<FinancialNewsResult> => {
     return result;
 
   } catch (error) {
-    console.error("Error fetching financial news from Gemini:", error);
+    const errorString = JSON.stringify(error);
+    const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+
+    if (!isRateLimitError) {
+      console.error("Error fetching financial news from Gemini:", error);
+    }
     
-    const errorString = (error as Error).toString();
     let result: FinancialNewsResult;
 
-    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+    if (isRateLimitError) {
         result = {
              articles: [
                 { title: 'AI News Feed Unavailable', summary: 'Our AI-powered news feed is currently at capacity. Please check back later.', category: 'System Alert' }
@@ -220,7 +238,7 @@ export const getInsuranceProductDetails = async (productName: string): Promise<{
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: `Generate a compelling marketing description and exactly 3 key benefits for a financial insurance product called "${productName}" offered by a fintech bank. The tone should be professional, reassuring, and modern.`,
       config: {
@@ -253,22 +271,30 @@ export const getInsuranceProductDetails = async (productName: string): Promise<{
     insuranceCache.set(productName, result);
     return result;
   } catch (error) {
-    console.error(`Error fetching insurance details for ${productName} from Gemini:`, error);
-    const errorString = (error as Error).toString();
-    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-        // Fallback with a rate-limited message
-        const rateLimitResult = {
-            product: {
-                name: productName,
-                description: 'AI-powered product details are currently unavailable due to high demand. Please check back later.',
-                benefits: ['Comprehensive coverage information will be available soon.'],
-            },
-            isError: true,
-        };
-        insuranceCache.set(productName, rateLimitResult);
-        return rateLimitResult;
+    const errorString = JSON.stringify(error);
+    const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+    
+    if (!isRateLimitError) {
+      console.error(`Error fetching insurance details for ${productName} from Gemini:`, error);
     }
-    return { product: null, isError: true };
+
+    let description: string;
+    if (isRateLimitError) {
+        description = 'AI-powered product details are currently unavailable due to high demand. Please check back later.';
+    } else {
+        description = 'We are currently unable to retrieve details for this product. Please try again later.';
+    }
+    const errorResult = {
+        product: {
+            name: productName,
+            description,
+            benefits: ['Coverage information will be available soon.'],
+        },
+        isError: true,
+    };
+    // Cache all errors to prevent repeated calls during a session.
+    insuranceCache.set(productName, errorResult);
+    return errorResult;
   }
 };
 
@@ -292,7 +318,7 @@ export const getLoanProducts = async (): Promise<{ products: LoanProduct[]; isEr
     }
 
     try {
-        const response = await ai.models.generateContent({
+        const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `You are a financial product manager for a modern fintech bank. Generate details for three distinct loan products: a Personal Loan, an Auto Loan, and a Home Mortgage. For each product, provide a unique id (personal, auto, mortgage), a compelling one-paragraph marketing description, a list of exactly three key benefits, and a realistic min/max interest rate range. The tone should be professional, empowering, and clear.`,
             config: {
@@ -323,13 +349,18 @@ export const getLoanProducts = async (): Promise<{ products: LoanProduct[]; isEr
         loanCache.set(cacheKey, result);
         return result;
     } catch (error) {
-        console.error("Error fetching loan products from Gemini:", error);
-        const errorString = (error as Error).toString();
-        const result = { products: [], isError: true };
-        if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-            loanCache.set(cacheKey, result);
+        const errorString = JSON.stringify(error);
+        const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+
+        if (!isRateLimitError) {
+            console.error("Error fetching loan products from Gemini:", error);
         }
-        return result;
+
+        // The UI handles an empty products array correctly by showing an error message.
+        const errorResult = { products: [], isError: true };
+        // Cache all errors to prevent repeated calls during a session.
+        loanCache.set(cacheKey, errorResult);
+        return errorResult;
     }
 };
 
@@ -346,7 +377,7 @@ export const getSupportAnswer = async (query: string): Promise<{ answer: string;
   }
   
   try {
-    const response = await ai.models.generateContent({
+    const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: `You are a friendly and helpful customer support AI for ApexBank. A customer has asked the following question: "${query}". Provide a clear, concise, and helpful answer. Use formatting like bolding for key terms and bullet points for lists if it makes the answer easier to understand. Do not invent features that don't exist. Be professional and reassuring.`,
       config: { temperature: 0.3, maxOutputTokens: 250 }
@@ -355,14 +386,23 @@ export const getSupportAnswer = async (query: string): Promise<{ answer: string;
     supportCache.set(query, result);
     return result;
   } catch (error) {
-    console.error(`Error fetching support answer for "${query}" from Gemini:`, error);
-    const errorString = (error as Error).toString();
-    const result = { answer: "I'm sorry, but I was unable to process your request at this time. Please try rephrasing your question or contact our human support team for assistance.", isError: true };
-    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-        result.answer = "Our AI assistant is currently experiencing high demand. Please try again in a few moments or contact our human support team."
-        supportCache.set(query, result);
+    const errorString = JSON.stringify(error);
+    const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+
+    if (!isRateLimitError) {
+      console.error(`Error fetching support answer for "${query}" from Gemini:`, error);
     }
-    return result;
+
+    let answer: string;
+    if (isRateLimitError) {
+        answer = "Our AI assistant is currently experiencing high demand. Please try again in a few moments or contact our human support team."
+    } else {
+        answer = "I'm sorry, but I was unable to process your request at this time. Please try rephrasing your question or contact our human support team for assistance.";
+    }
+    const errorResult = { answer, isError: true };
+    // Cache all errors to prevent repeated calls during a session.
+    supportCache.set(query, errorResult);
+    return errorResult;
   }
 };
 
@@ -386,7 +426,7 @@ export const getSystemUpdates = async (): Promise<{ updates: SystemUpdate[]; isE
     }
 
     try {
-        const response = await ai.models.generateContent({
+        const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `As the communications manager for ApexBank, generate a list of 3 recent, synthetic system updates. The response must be a JSON object containing an 'updates' array. Each object in the array should have a unique id, title, description, an ISO 8601 date within the last month, and a category ('New Feature', 'Improvement', or 'Maintenance').`,
             config: {
@@ -422,13 +462,18 @@ export const getSystemUpdates = async (): Promise<{ updates: SystemUpdate[]; isE
         updatesCache.set(updatesCacheKey, result);
         return result;
     } catch (error) {
-        console.error("Error fetching system updates from Gemini:", error);
-        const errorString = (error as Error).toString();
-        const result = { updates: [], isError: true };
-        if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-            updatesCache.set(updatesCacheKey, result);
+        const errorString = JSON.stringify(error);
+        const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+
+        if (!isRateLimitError) {
+            console.error("Error fetching system updates from Gemini:", error);
         }
-        return result;
+        
+        // The UI handles an empty updates array correctly by showing an error message.
+        const errorResult = { updates: [], isError: true };
+        // Cache all errors to prevent repeated calls during a session.
+        updatesCache.set(updatesCacheKey, errorResult);
+        return errorResult;
     }
 };
 
@@ -451,7 +496,7 @@ export const getAccountPerks = async (accountType: AccountType, verificationLeve
     }
 
     try {
-        const response = await ai.models.generateContent({
+        const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `As a banking security expert, generate a list of exactly 3 compelling, modern security perks for a "${accountType}" account for a customer who is at "${verificationLevel}" verification status. Higher verification levels should unlock more advanced perks. For example, a "Verified+" user might get enhanced insurance or proactive monitoring. The tone should be reassuring and professional.`,
             config: {
@@ -474,12 +519,17 @@ export const getAccountPerks = async (accountType: AccountType, verificationLeve
         return result;
 
     } catch (error) {
-        console.error("Error fetching account perks from Gemini:", error);
-        const errorString = (error as Error).toString();
-        const result = { perks: [], isError: true };
-        if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-            accountPerksCache.set(cacheKey, result);
+        const errorString = JSON.stringify(error);
+        const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+        
+        if (!isRateLimitError) {
+            console.error("Error fetching account perks from Gemini:", error);
         }
-        return result;
+
+        // The UI handles an empty perks array correctly by showing an error message.
+        const errorResult = { perks: [], isError: true };
+        // Cache all errors to prevent repeated calls during a session.
+        accountPerksCache.set(cacheKey, errorResult);
+        return errorResult;
     }
 };

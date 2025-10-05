@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { ExclamationTriangleIcon } from './Icons';
 
 interface InactivityModalProps {
   onStayLoggedIn: () => void;
@@ -23,16 +22,38 @@ export const InactivityModal: React.FC<InactivityModalProps> = ({ onStayLoggedIn
     return () => clearTimeout(timer);
   }, [countdown, onLogout]);
 
+  const circumference = 2 * Math.PI * 48; // r="48"
+  const progress = countdown / countdownStart;
+  const strokeDashoffset = circumference * (1 - progress);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-slate-200 rounded-2xl shadow-digital p-8 w-full max-w-md m-4 transform animate-fade-in-up">
         <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4 shadow-digital-inset">
-                <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600"/>
+            <div className="relative w-28 h-28 mx-auto mb-4">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 110 110">
+                    <circle cx="55" cy="55" r="48" fill="none" strokeWidth="10" className="text-slate-300" />
+                    <circle
+                        cx="55"
+                        cy="55"
+                        r="48"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="10"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        className="text-yellow-500"
+                        style={{ transition: 'stroke-dashoffset 1s linear' }}
+                    />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-4xl font-bold text-slate-800">{countdown}</span>
+                </div>
             </div>
             <h2 className="text-2xl font-bold text-slate-800">Are you still there?</h2>
             <p className="text-slate-600 my-4">
-                For your security, you will be automatically logged out in <span className="font-bold">{countdown}</span> seconds due to inactivity.
+                For your security, you will be automatically logged out due to inactivity.
             </p>
         </div>
         <div className="mt-6 flex flex-col sm:flex-row-reverse gap-3">

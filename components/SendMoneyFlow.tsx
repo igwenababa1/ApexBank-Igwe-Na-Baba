@@ -1,14 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { Recipient, Transaction, Account } from '../types';
+import { Recipient, Transaction, Account, SecuritySettings } from '../types';
 import { FIXED_FEE, EXCHANGE_RATES, TRANSFER_PURPOSES, USER_PIN } from '../constants';
 import { LiveTransactionView } from './LiveTransactionView';
-import { SpinnerIcon, CheckCircleIcon, ExclamationTriangleIcon, KeypadIcon, BankIcon, CreditCardIcon, WithdrawIcon } from './Icons';
+import { SpinnerIcon, CheckCircleIcon, ExclamationTriangleIcon, KeypadIcon, BankIcon, CreditCardIcon, WithdrawIcon, FaceIdIcon } from './Icons';
+import { triggerHaptic } from '../utils/haptics';
 
 interface SendMoneyFlowProps {
   recipients: Recipient[];
   accounts: Account[];
   createTransaction: (transaction: Omit<Transaction, 'id' | 'status' | 'estimatedArrival' | 'statusTimestamps' | 'type'>) => Transaction | null;
   transactions: Transaction[];
+  securitySettings: SecuritySettings;
+  hapticsEnabled: boolean;
 }
 
 // Stepper component
@@ -52,8 +55,8 @@ const Stepper: React.FC<{ steps: string[], currentStep: number }> = ({ steps, cu
 
 
 // Main Component
-export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accounts, createTransaction, transactions }) => {
-  const [step, setStep] = useState(0); // 0: Amount, 1: Security, 2: PIN, 3: Review, 4: Success
+export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accounts, createTransaction, transactions, securitySettings, hapticsEnabled }) => {
+  const [step, setStep] = useState(0); // 0: Amount, 1: Authorize, 2: Review, 3: Success
   
   const availableSourceAccounts = accounts.filter(acc => acc.balance > 0);
   // Form State
@@ -63,9 +66,9 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
   const [purpose, setPurpose] = useState(TRANSFER_PURPOSES[0]);
 
   // Security State
-  const [securityAcknowledged, setSecurityAcknowledged] = useState(false);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Transaction State
   const [createdTransaction, setCreatedTransaction] = useState<Transaction | null>(null);
@@ -83,21 +86,49 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
     return transactions.find(t => t.id === createdTransaction.id) || createdTransaction;
   }, [transactions, createdTransaction]);
 
-  const handleNextStep = () => setStep(prev => prev + 1);
-  const handlePrevStep = () => setStep(prev => prev - 1);
+  const hapticTrigger = () => {
+    if(hapticsEnabled) triggerHaptic();
+  }
+
+  const handleNextStep = () => {
+    hapticTrigger();
+    setStep(prev => prev + 1);
+  }
+  const handlePrevStep = () => {
+    hapticTrigger();
+    setStep(prev => prev - 1);
+  }
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    hapticTrigger();
+    setIsAuthenticating(true);
     setPinError('');
-    if (pin === USER_PIN) {
-      handleNextStep();
-    } else {
-      setPinError('Incorrect PIN. Please try again.');
-    }
+    setTimeout(() => { // Simulate API call
+      if (pin === USER_PIN) {
+        handleNextStep();
+      } else {
+        setPinError('Incorrect PIN. Please try again.');
+      }
+      setIsAuthenticating(false);
+    }, 500);
+  };
+
+  const handleBiometricAuth = () => {
+    hapticTrigger();
+    setIsAuthenticating(true);
+    setPinError('');
+    setTimeout(() => { // Simulate biometric prompt
+        // In a real app, this would use WebAuthn API
+        // For demo, we just approve it
+        handleNextStep();
+        setIsAuthenticating(false);
+    }, 1500);
   };
 
   const handleConfirmAndSend = () => {
     if (!selectedRecipient || !sourceAccount) return;
+    hapticTrigger();
 
     const newTransaction = createTransaction({
       accountId: sourceAccount.id,
@@ -117,18 +148,18 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
   };
 
   const handleStartOver = () => {
+    hapticTrigger();
     setStep(0);
     setSelectedRecipient(recipients.length > 0 ? recipients[0] : null);
     setSourceAccountId(availableSourceAccounts.length > 0 ? availableSourceAccounts[0].id : '');
     setSendAmount('');
     setPurpose(TRANSFER_PURPOSES[0]);
-    setSecurityAcknowledged(false);
     setPin('');
     setPinError('');
     setCreatedTransaction(null);
   };
 
-  const steps = ['Amount', 'Security', 'Authorize', 'Review', 'Complete'];
+  const steps = ['Amount', 'Authorize', 'Review', 'Complete'];
 
   const renderStepContent = () => {
     switch(step) {
@@ -172,16 +203,17 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
 
               <div>
                 <label htmlFor="sendAmount" className="block text-sm font-medium text-slate-700">You Send</label>
-                <div className="mt-1 relative rounded-md shadow-digital-inset">
+                <div className="mt-1 relative rounded-md shadow-digital-inset bg-slate-200 flex items-center">
                   <input
                     type="number"
                     id="sendAmount"
                     value={sendAmount}
                     onChange={e => setSendAmount(e.target.value)}
-                    className="w-full bg-transparent border-0 p-3 pr-16"
+                    className="w-full bg-transparent border-0 p-3 pr-4 text-lg font-mono flex-grow"
                     placeholder="0.00"
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <div className="p-3 flex items-center space-x-2 border-l border-slate-300 pointer-events-none">
+                     <img src={`https://flagcdn.com/w40/us.png`} alt="USD flag" className="w-5 h-auto" />
                     <span className="text-slate-500 font-semibold">USD</span>
                   </div>
                 </div>
@@ -211,9 +243,19 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
                   <span className="text-slate-600">Total to Pay</span>
                   <span className="font-mono text-slate-800">{totalCost.toFixed(2)} USD</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-300">
+                <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-300 items-center">
                   <span className="text-slate-700">Recipient Gets</span>
-                  <span className="text-primary">{receiveAmount.toFixed(2)} {selectedRecipient?.country.currency}</span>
+                   <div className="flex items-center space-x-2">
+                    {selectedRecipient && (
+                      <img 
+                          key={selectedRecipient.country.code}
+                          src={`https://flagcdn.com/w40/${selectedRecipient.country.code.toLowerCase()}.png`} 
+                          alt={`${selectedRecipient.country.currency} flag`}
+                          className="w-5 h-auto animate-pop-in"
+                      />
+                    )}
+                    <span className="text-primary">{receiveAmount.toFixed(2)} {selectedRecipient?.country.currency}</span>
+                  </div>
                 </div>
               </div>
               <button onClick={handleNextStep} disabled={isAmountInvalid || !selectedRecipient} className="w-full py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg disabled:bg-primary-300 transition-all">
@@ -223,69 +265,66 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
           </>
         );
 
-      // Security Warning
+      // PIN Authorization
       case 1:
           return (
               <div className="text-center p-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4 shadow-digital-inset">
-                      <ExclamationTriangleIcon className="w-8 h-8 text-red-600"/>
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-800">Stop. Think. Is this transfer safe?</h2>
-                  <p className="text-slate-600 my-4">
-                      Scammers and fraudsters are clever. Only send money to people you personally know and trust. We cannot recover funds once they are sent.
-                  </p>
-                  <div className="p-4 rounded-lg shadow-digital-inset text-left">
-                      <label htmlFor="security-check" className="flex items-start space-x-3 cursor-pointer">
-                          <input 
-                              type="checkbox"
-                              id="security-check"
-                              checked={securityAcknowledged}
-                              onChange={() => setSecurityAcknowledged(!securityAcknowledged)}
-                              className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
-                          />
-                          <p className="text-sm font-medium text-slate-700">I confirm that I know and trust the recipient, and I understand that this transaction is final.</p>
-                      </label>
-                  </div>
-                   <div className="mt-6 flex space-x-3">
-                      <button onClick={handlePrevStep} className="w-full py-3 text-slate-700 bg-slate-200 rounded-lg font-semibold shadow-digital active:shadow-digital-inset transition-all">Back</button>
-                      <button onClick={handleNextStep} disabled={!securityAcknowledged} className="w-full py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg disabled:bg-primary-300 transition-all">
-                        Continue
-                      </button>
-                  </div>
-              </div>
-          );
-
-      // PIN Authorization
-      case 2:
-          return (
-              <div className="text-center p-4">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-200 rounded-full mb-4 shadow-digital">
-                      <KeypadIcon className="w-8 h-8 text-primary"/>
+                      {isAuthenticating ? <SpinnerIcon className="w-8 h-8 text-primary"/> : <KeypadIcon className="w-8 h-8 text-primary"/>}
                   </div>
                   <h2 className="text-2xl font-bold text-slate-800">Authorize Payment</h2>
-                  <p className="text-slate-600 my-4">Please enter your 4-digit security PIN to authorize this transfer.</p>
+                  
+                  <div className="my-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg shadow-digital-inset text-sm text-left flex items-start space-x-3">
+                      <ExclamationTriangleIcon className="w-8 h-8 flex-shrink-0" />
+                      <p>
+                          <strong>Stop. Think. Is this transfer safe?</strong><br/>
+                          Scammers are clever. Only send money to people you personally know and trust. We cannot recover funds once they are sent.
+                      </p>
+                  </div>
+
                   <form onSubmit={handlePinSubmit}>
+                      <label htmlFor="pin-input" className="text-slate-600 my-4 block">Please enter your 4-digit security PIN to authorize this transfer.</label>
                       <input 
+                          id="pin-input"
                           type="password" 
                           value={pin}
                           onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                           className="w-48 mx-auto bg-slate-200 border-0 p-3 text-center text-3xl tracking-[.75em] rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400"
                           maxLength={4}
                           placeholder="----"
+                          autoComplete="off"
+                          disabled={isAuthenticating}
                       />
                       {pinError && <p className="mt-2 text-sm text-red-600">{pinError}</p>}
                        <div className="mt-6 flex space-x-3">
-                          <button type="button" onClick={handlePrevStep} className="w-full py-3 text-slate-700 bg-slate-200 rounded-lg font-semibold shadow-digital active:shadow-digital-inset transition-all">Back</button>
-                          <button type="submit" disabled={pin.length !== 4} className="w-full py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg disabled:bg-primary-300 transition-all">
+                          <button type="button" onClick={handlePrevStep} className="w-full py-3 text-slate-700 bg-slate-200 rounded-lg font-semibold shadow-digital active:shadow-digital-inset transition-all" disabled={isAuthenticating}>Back</button>
+                          <button type="submit" disabled={pin.length !== 4 || isAuthenticating} className="w-full py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg disabled:bg-primary-300 transition-all">
                             Authorize
                           </button>
                       </div>
                   </form>
+                  {securitySettings.biometricsEnabled && (
+                    <>
+                      <div className="my-4 flex items-center">
+                          <div className="flex-grow border-t border-slate-300"></div>
+                          <span className="flex-shrink mx-4 text-xs text-slate-400">OR</span>
+                          <div className="flex-grow border-t border-slate-300"></div>
+                      </div>
+                      <button onClick={handleBiometricAuth} disabled={isAuthenticating} className="w-full flex justify-center items-center space-x-2 py-3 rounded-lg font-semibold text-slate-700 bg-slate-200 shadow-digital active:shadow-digital-inset disabled:opacity-50 transition-shadow">
+                          {isAuthenticating ? (
+                              <SpinnerIcon className="w-5 h-5"/>
+                          ) : (
+                              <FaceIdIcon className="w-5 h-5"/>
+                          )}
+                          <span>{isAuthenticating ? 'Scanning...' : 'Use Face ID'}</span>
+                      </button>
+                    </>
+                  )}
               </div>
           );
 
       // Review
-      case 3:
+      case 2:
         return (
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-slate-800 text-center">Review Your Transfer</h3>
@@ -328,7 +367,7 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
         );
 
       // Success
-      case 4:
+      case 3:
         if (!liveTransaction) {
             return (
                 <div className="text-center p-8">
@@ -367,7 +406,7 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Exchange rate</span>
-                  <span className="text-slate-800 font-mono">1 USD = {liveTransaction.exchangeRate.toFixed(4)} {liveTransaction.recipient.country.currency}</span>
+                  <span className="font-mono text-slate-800">1 USD = {liveTransaction.exchangeRate.toFixed(4)} {liveTransaction.recipient.country.currency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Fee</span>
@@ -407,7 +446,7 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
   return (
     <div className="bg-slate-200 p-8 rounded-2xl shadow-digital max-w-2xl mx-auto">
       <div className="mb-10 h-10">
-        {step < 4 && <Stepper steps={steps} currentStep={step} />}
+        {step < 3 && <Stepper steps={steps} currentStep={step} />}
       </div>
       {renderStepContent()}
     </div>

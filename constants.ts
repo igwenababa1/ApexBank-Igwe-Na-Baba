@@ -1,4 +1,4 @@
-import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile } from './types';
+import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme } from './types';
 import { BtcIcon, EthIcon, ApxIcon } from './components/Icons';
 
 export const SUPPORTED_COUNTRIES: Country[] = [
@@ -20,6 +20,25 @@ export const TRANSFER_PURPOSES: string[] = [
     'Loan Repayment',
     'Other',
 ];
+
+export const BANKS_BY_COUNTRY: { [countryCode: string]: string[] } = {
+  US: ['Chase Bank', 'Bank of America', 'Wells Fargo', 'Citibank', 'PNC Bank'],
+  GB: ['Barclays', 'HSBC', 'Lloyds Bank', 'NatWest', 'Santander UK'],
+  DE: ['Deutsche Bank', 'Commerzbank', 'DZ Bank', 'KfW', 'HypoVereinsbank'],
+  CA: ['Royal Bank of Canada', 'TD Bank', 'Scotiabank', 'Bank of Montreal', 'CIBC'],
+  AU: ['Commonwealth Bank', 'Westpac', 'ANZ', 'NAB', 'Macquarie Bank'],
+  JP: ['MUFG Bank', 'Sumitomo Mitsui Banking Corporation', 'Mizuho Bank'],
+  FR: ['BNP Paribas', 'Crédit Agricole', 'Société Générale', 'Groupe BPCE'],
+};
+
+export const CURRENCY_TO_COUNTRY_CODE: { [currency: string]: string } = {
+  USD: 'US',
+  GBP: 'GB',
+  EUR: 'DE', // Representative for Euro
+  CAD: 'CA',
+  AUD: 'AU',
+  JPY: 'JP',
+};
 
 export const INITIAL_RECIPIENTS: Recipient[] = [
   {
@@ -179,8 +198,8 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     chequeDetails: {
       chequeNumber: '1234',
       images: {
-        front: 'https://placehold.co/600x250/E2E8F0/475569?text=Cheque+Front',
-        back: 'https://placehold.co/600x250/E2E8F0/475569?text=Cheque+Back',
+        front: 'https://placehold.co/800x333/E2E8F0/475569?text=Front+of+Check%0A%0APay+to+the+order+of+Eleanor+Vance%0A%0A%241,250.75',
+        back: 'https://placehold.co/800x333/E2E8F0/475569?text=Back+of+Check%0A%0AEndorse+Here',
       }
     }
   },
@@ -361,4 +380,49 @@ export const USER_PROFILE: UserProfile = {
     date: new Date(Date.now() - 86400000 * 2), // 2 days ago
     from: 'New York, NY',
   },
+};
+
+// --- Platform Features ---
+export const INITIAL_PLATFORM_SETTINGS: PlatformSettings = {
+  hapticsEnabled: true,
+  theme: 'blue',
+};
+
+export const THEME_COLORS: { [key in PlatformTheme]: { [key: string]: string } } = {
+  blue: {
+    '50': '230 238 255',
+    '100': '204 222 255',
+    '200': '153 189 255',
+    '300': '102 155 255',
+    '400': '51 122 255',
+    '500': '0 82 255',
+    '600': '0 66 204',
+    '700': '0 49 153',
+    '800': '0 33 102',
+    '900': '0 16 51',
+  },
+  green: {
+    '50': '240 253 244',
+    '100': '220 252 231',
+    '200': '187 247 208',
+    '300': '134 239 172',
+    '400': '74 222 128',
+    '500': '34 197 94',
+    '600': '22 163 74',
+    '700': '21 128 61',
+    '800': '22 101 52',
+    '900': '20 83 45',
+  },
+  purple: {
+    '50': '245 243 255',
+    '100': '237 233 254',
+    '200': '221 214 254',
+    '300': '196 181 253',
+    '400': '167 139 250',
+    '500': '139 92 246',
+    '600': '124 58 237',
+    '700': '109 40 217',
+    '800': '91 33 182',
+    '900': '76 29 149',
+  }
 };

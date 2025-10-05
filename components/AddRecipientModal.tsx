@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Country } from '../types';
-import { SUPPORTED_COUNTRIES } from '../constants';
+import { SUPPORTED_COUNTRIES, BANKS_BY_COUNTRY } from '../constants';
 // FIX: The notification-related functions were being imported from `geminiService` instead of `notificationService`.
 import { getCountryBankingTip, BankingTipResult } from '../services/geminiService';
 import { sendSmsNotification, sendTransactionalEmail, generateOtpEmail, generateOtpSms } from '../services/notificationService';
@@ -28,6 +28,7 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
   // Form state
   const [fullName, setFullName] = useState('');
   const [bankName, setBankName] = useState('');
+  const [otherBankName, setOtherBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [swiftBic, setSwiftBic] = useState('');
   const [country, setCountry] = useState<Country | undefined>(undefined);
@@ -69,8 +70,10 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
             error = !value.trim() ? "Full name is required." : null;
             break;
         case 'bankName':
-            error = !value.trim() ? "Bank name is required." : null;
-            break;
+            const finalBank = value === 'Other' ? otherBankName : value;
+            error = !finalBank.trim() ? "Bank name is required." : null;
+            setErrors(prev => ({ ...prev, bankName: error }));
+            return;
         case 'accountNumber':
             error = validateAccountNumber(value);
             break;
@@ -91,9 +94,10 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalBankName = bankName === 'Other' ? otherBankName : bankName;
     const submissionErrors: Record<string, string | null> = {
       fullName: !fullName.trim() ? "Full name is required." : null,
-      bankName: !bankName.trim() ? "Bank name is required." : null,
+      bankName: !finalBankName.trim() ? "Bank name is required." : null,
       country: !country ? "Country is required." : null,
       accountNumber: validateAccountNumber(accountNumber),
       swiftBic: validateSwiftBic(swiftBic),
@@ -103,7 +107,7 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
     setErrors(validErrors);
 
     if (Object.keys(validErrors).length === 0 && country) {
-      const data = { fullName, bankName, accountNumber, swiftBic, country, cashPickupEnabled };
+      const data = { fullName, bankName: finalBankName, accountNumber, swiftBic, country, cashPickupEnabled };
       setRecipientData(data);
       setModalStep('otp');
 
@@ -133,6 +137,9 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCode = e.target.value;
     validateField('country', selectedCode);
+    setBankName('');
+    setOtherBankName('');
+    setErrors(prev => ({ ...prev, bankName: null }));
     if (selectedCode === '') {
       setCountry(undefined);
     } else {
@@ -141,7 +148,8 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
     }
   }
 
-  const isFormInvalid = !fullName || !bankName || !accountNumber || !swiftBic || !country || Object.values(errors).some(e => e !== null);
+  const finalBankName = bankName === 'Other' ? otherBankName : bankName;
+  const isFormInvalid = !fullName || !finalBankName || !accountNumber || !swiftBic || !country || Object.values(errors).some(e => e !== null);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -172,7 +180,48 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
                 )}
                 <div>
                   <label htmlFor="bankName" className="block text-sm font-medium text-slate-700">Bank Name</label>
-                  <input type="text" id="bankName" name="bankName" value={bankName} onChange={e => setBankName(e.target.value)} onBlur={handleBlur} className={`mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 ${errors.bankName ? 'ring-2 ring-red-500' : ''}`} required />
+                   {country && BANKS_BY_COUNTRY[country.code] ? (
+                    <select
+                        id="bankName"
+                        name="bankName"
+                        value={bankName}
+                        onChange={e => setBankName(e.target.value)}
+                        onBlur={handleBlur}
+                        className={`mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 ${errors.bankName ? 'ring-2 ring-red-500' : ''}`}
+                        required
+                    >
+                        <option value="" disabled>Select a bank</option>
+                        {BANKS_BY_COUNTRY[country.code].map(b => <option key={b} value={b}>{b}</option>)}
+                        <option value="Other">Other...</option>
+                    </select>
+                  ) : (
+                      <input
+                        type="text"
+                        id="bankNameInput"
+                        name="bankName"
+                        value={bankName}
+                        onChange={e => setBankName(e.target.value)}
+                        onBlur={handleBlur}
+                        className={`mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 ${errors.bankName ? 'ring-2 ring-red-500' : ''}`}
+                        required
+                        placeholder={country ? "Enter bank name" : "Select a country first"}
+                        disabled={!country}
+                    />
+                  )}
+                  {bankName === 'Other' && (
+                      <input
+                          type="text"
+                          id="otherBankName"
+                          name="otherBankName"
+                          value={otherBankName}
+                          onChange={e => setOtherBankName(e.target.value)}
+                          onBlur={(e) => validateField('bankName', 'Other')}
+                          className={`mt-2 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 ${errors.bankName ? 'ring-2 ring-red-500' : ''}`}
+                          placeholder="Enter bank name"
+                          required
+                          autoFocus
+                      />
+                  )}
                   {errors.bankName && <p className="mt-1 text-sm text-red-600">{errors.bankName}</p>}
                 </div>
                 <div>

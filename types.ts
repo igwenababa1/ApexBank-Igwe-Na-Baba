@@ -305,3 +305,11 @@ export interface UserProfile {
     from: string; // e.g., 'New York, NY'
   };
 }
+
+// Platform-specific features
+export type PlatformTheme = 'blue' | 'green' | 'purple';
+
+export interface PlatformSettings {
+  hapticsEnabled: boolean;
+  theme: PlatformTheme;
+}

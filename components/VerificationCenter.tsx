@@ -12,6 +12,55 @@ const steps = [
   { level: VerificationLevel.LEVEL_2, title: "Liveness Check", icon: <CameraIcon className="w-8 h-8"/>, description: "Confirm you're a real person with a quick video scan." }
 ];
 
+const DocumentScanAnimation = () => (
+    <div className="relative w-48 h-60 mx-auto my-4 bg-slate-300 rounded-lg shadow-inner overflow-hidden p-4">
+        <div className="absolute top-0 left-0 w-full h-1 bg-primary/70 shadow-[0_0_10px_theme(colors.primary)] animate-scan"></div>
+        <div className="h-4 bg-slate-400 rounded w-1/3 mb-4"></div>
+        <div className="h-2 bg-slate-400 rounded w-full mb-2"></div>
+        <div className="h-2 bg-slate-400 rounded w-full mb-2"></div>
+        <div className="h-2 bg-slate-400 rounded w-2/3 mb-4"></div>
+        <div className="h-2 bg-slate-400 rounded w-full mb-2"></div>
+        <div className="h-2 bg-slate-400 rounded w-full mb-2"></div>
+        <div className="h-2 bg-slate-400 rounded w-4/5"></div>
+        <style>{`
+            @keyframes scan {
+                0% { top: 0; }
+                100% { top: 100%; }
+            }
+            .animate-scan { animation: scan 2s ease-in-out infinite; }
+        `}</style>
+    </div>
+);
+
+const LivenessScanOverlay = () => (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <svg className="w-full h-full" viewBox="0 0 200 200">
+            {/* <!-- Face oval --> */}
+            <ellipse cx="100" cy="100" rx="60" ry="80" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="2" strokeDasharray="5 5" />
+            
+            {/* <!-- Animated scanning line --> */}
+            <line x1="40" y1="20" x2="160" y2="20" stroke="#0052FF" strokeWidth="2" className="animate-liveness-scan" />
+            
+            {/* <!-- Corner brackets --> */}
+            <path d="M 30 50 L 30 30 L 50 30" stroke="white" strokeWidth="3" fill="none" />
+            <path d="M 170 50 L 170 30 L 150 30" stroke="white" strokeWidth="3" fill="none" />
+            <path d="M 30 150 L 30 170 L 50 170" stroke="white" strokeWidth="3" fill="none" />
+            <path d="M 170 150 L 170 170 L 150 170" stroke="white" strokeWidth="3" fill="none" />
+        </svg>
+        <style>{`
+            @keyframes liveness-scan {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(160px); }
+            }
+            .animate-liveness-scan {
+                animation: liveness-scan 3s ease-in-out infinite;
+                filter: drop-shadow(0 0 5px #0052FF);
+            }
+        `}</style>
+    </div>
+);
+
+
 export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentLevel, onClose }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
@@ -29,16 +78,10 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
   const handleDocumentUpload = () => {
     setStatus('processing');
     setProgress(0);
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setStatus('success');
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+    // Simulate a 2-second scan
+    setTimeout(() => {
+        setStatus('success');
+    }, 2000);
   };
   
   const handleLivenessCheck = async () => {
@@ -83,23 +126,21 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
       if (stepInfo.level === VerificationLevel.LEVEL_1) {
         return (
           <div className="text-center">
-            <h3 className="text-lg font-bold text-slate-800">Analyzing Document...</h3>
-            <div className="w-full bg-slate-300 rounded-full h-2.5 my-4">
-              <div className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
-            </div>
-            <p className="text-sm text-slate-500">Our AI is securely verifying your document details.</p>
+            <h3 className="text-lg font-bold text-slate-800">Securely analyzing document...</h3>
+            <DocumentScanAnimation />
+            <p className="text-sm text-slate-500">Our AI is verifying your document details.</p>
           </div>
         );
       }
       if (stepInfo.level === VerificationLevel.LEVEL_2) {
         return (
           <div className="text-center">
-            <h3 className="text-lg font-bold text-slate-800">Performing Liveness Scan...</h3>
-            <div className="relative w-48 h-48 mx-auto my-4 rounded-full overflow-hidden border-4 border-primary p-1">
+            <h3 className="text-lg font-bold text-slate-800">Performing liveness check...</h3>
+            <div className="relative w-48 h-64 mx-auto my-4 rounded-full overflow-hidden border-4 border-primary p-1 bg-slate-800">
                 <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover rounded-full scale-x-[-1]"></video>
-                <div className="absolute inset-0 border-4 border-dashed border-white/50 rounded-full animate-pulse"></div>
+                <LivenessScanOverlay />
             </div>
-            <p className="text-sm text-slate-500">Please hold still and look at the camera.</p>
+            <p className="text-sm text-slate-500">Please keep your face within the oval.</p>
           </div>
         );
       }

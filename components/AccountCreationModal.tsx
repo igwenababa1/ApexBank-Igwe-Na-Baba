@@ -10,6 +10,7 @@ import {
 } from './Icons';
 import { SUPPORTED_COUNTRIES } from '../constants';
 import { Country } from '../types';
+import { AccountProvisioningAnimation } from './AccountProvisioningAnimation';
 
 interface AccountCreationModalProps {
     onClose: () => void;
@@ -43,7 +44,7 @@ export const AccountCreationModal: React.FC<AccountCreationModalProps> = ({ onCl
         agreedToTerms: false,
     });
     const [errors, setErrors] = useState<Record<string, string | null>>({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isProvisioning, setIsProvisioning] = useState(false);
     const [idFileName, setIdFileName] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -135,15 +136,13 @@ export const AccountCreationModal: React.FC<AccountCreationModalProps> = ({ onCl
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (validateStep()) {
-            setIsSubmitting(true);
-            // Simulate API call
-            setTimeout(() => {
-                console.log('Account created:', formData);
-                setIsSubmitting(false);
-                onCreateAccountSuccess();
-            }, 2000);
+            setIsProvisioning(true);
         }
     };
+
+    if (isProvisioning) {
+        return <AccountProvisioningAnimation onComplete={onCreateAccountSuccess} />;
+    }
 
     const renderStepContent = () => {
         switch (step) {
@@ -294,18 +293,17 @@ export const AccountCreationModal: React.FC<AccountCreationModalProps> = ({ onCl
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-slate-300 flex justify-between">
-                    <button onClick={handleBack} disabled={step === 0 || isSubmitting} className="px-6 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset disabled:opacity-50">Back</button>
+                    <button onClick={handleBack} disabled={step === 0} className="px-6 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset disabled:opacity-50">Back</button>
                     {step < steps.length - 1 ? (
                         <button onClick={handleNext} className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-md hover:shadow-lg">Next</button>
                     ) : (
-                        <button onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2 text-sm font-medium text-white bg-green-500 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50 flex items-center">
-                            {isSubmitting && <SpinnerIcon className="w-4 h-4 mr-2" />}
-                            {isSubmitting ? 'Creating Account...' : 'Finish & Create Account'}
+                        <button onClick={handleSubmit} className="px-6 py-2 text-sm font-medium text-white bg-green-500 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50 flex items-center">
+                            Finish & Create Account
                         </button>
                     )}
                 </div>
 
-                <button onClick={onClose} disabled={isSubmitting} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 disabled:opacity-50">
+                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>

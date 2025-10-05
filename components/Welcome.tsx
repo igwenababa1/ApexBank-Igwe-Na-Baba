@@ -26,7 +26,7 @@ interface WelcomeProps {
 }
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <div className="bg-slate-200 p-6 rounded-2xl shadow-digital hover:shadow-digital-inset transition-all duration-300 group">
+  <div className="bg-slate-200 p-6 rounded-2xl shadow-digital group-hover:-translate-y-1 group-hover:shadow-xl transition-all duration-300 group">
     <div className="flex items-center justify-center w-12 h-12 bg-slate-200 rounded-full mb-4 shadow-digital group-hover:shadow-digital-inset">
       {icon}
     </div>
@@ -263,19 +263,19 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
                   <p className="mt-3 text-slate-600 max-w-3xl mx-auto">We partner with industry leaders and adhere to global standards to ensure the integrity of our platform and the safety of your funds.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
-                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-xl hover:-translate-y-1 cursor-pointer transition-all">
                   <PlaidLogoIcon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">Securely connect your bank accounts with Plaid's industry-leading technology.</p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-xl hover:-translate-y-1 cursor-pointer transition-all">
                   <FdicInsuredIcon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">Eligible funds are FDIC insured up to $250,000 through our partner banks.</p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-xl hover:-translate-y-1 cursor-pointer transition-all">
                   <PciDssIcon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">PCI DSS compliance ensures your sensitive payment information is handled securely.</p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-digital-inset cursor-pointer transition-shadow">
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl shadow-digital hover:shadow-xl hover:-translate-y-1 cursor-pointer transition-all">
                   <Soc2Icon className="h-12 w-auto text-slate-800 transition duration-300" />
                   <p className="text-sm text-slate-600 mt-4">SOC 2 certified infrastructure demonstrates our commitment to data security.</p>
                 </div>

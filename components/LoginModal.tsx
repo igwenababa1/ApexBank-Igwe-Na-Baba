@@ -75,10 +75,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwit
   useEffect(() => {
     if (step === 'securityCheck') {
       const messages = [
-        'Establishing secure connection...',
-        'Encrypting session data...',
-        'Verifying device integrity...',
-        'Finalizing security handshake...'
+        'Establishing secure TLS 1.3 tunnel...',
+        'Verifying device fingerprint...',
+        'Checking against global threat intelligence...',
+        'Initializing end-to-end encrypted session...',
+        'Security handshake complete.'
       ];
       let messageIndex = 0;
       const interval = setInterval(() => {
@@ -89,7 +90,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwit
           clearInterval(interval);
           setTimeout(() => setStep('preMfaWarning'), 500);
         }
-      }, 800);
+      }, 750);
 
       return () => clearInterval(interval);
     }

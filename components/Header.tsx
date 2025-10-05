@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ApexBankLogo, DashboardIcon, SendIcon, UserGroupIcon, LogoutIcon, ActivityIcon, CogIcon, CreditCardIcon, BellIcon, SpinnerIcon, LifebuoyIcon, CashIcon, QuestionMarkCircleIcon, WalletIcon, ChartBarIcon, ShoppingBagIcon, MapPinIcon } from './Icons';
+import { 
+    ApexBankLogo, LogoutIcon, BellIcon, MenuIcon
+} from './Icons';
 import { Notification } from '../types';
 import { NotificationsPanel } from './NotificationsPanel';
+import { MegaMenu } from './MegaMenu'; // Import the new menu
 
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin';
+type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform';
 
 interface HeaderProps {
   activeView: View;
@@ -13,27 +16,9 @@ interface HeaderProps {
   onMarkNotificationsAsRead: () => void;
 }
 
-const NavItem: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}> = ({ icon, label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-      isActive
-        ? 'text-primary font-semibold shadow-digital-inset'
-        : 'text-slate-600 hover:text-primary shadow-digital active:shadow-digital-inset'
-    }`}
-  >
-    {icon}
-    <span>{label}</span>
-  </button>
-);
-
 export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLogout, notifications, onMarkNotificationsAsRead }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for the new menu
   const notificationsRef = useRef<HTMLDivElement>(null);
   
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -41,7 +26,6 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
   const toggleNotifications = () => {
       setShowNotifications(prev => !prev);
       if (!showNotifications) {
-          // Mark as read when opening
           onMarkNotificationsAsRead();
       }
   }
@@ -60,95 +44,28 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
   }, []);
 
   return (
-    <header className="bg-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex items-center space-x-2">
-            <ApexBankLogo />
-            <h1 className="text-2xl font-bold text-slate-800">ApexBank</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <nav className="flex items-center space-x-2">
-              <NavItem
-                icon={<DashboardIcon className="w-5 h-5" />}
-                label="Dashboard"
-                isActive={activeView === 'dashboard'}
-                onClick={() => setActiveView('dashboard')}
-              />
-              <NavItem
-                icon={<WalletIcon className="w-5 h-5" />}
-                label="Accounts"
-                isActive={activeView === 'accounts'}
-                onClick={() => setActiveView('accounts')}
-              />
-              <NavItem
-                icon={<SendIcon className="w-5 h-5" />}
-                label="Send Money"
-                isActive={activeView === 'send'}
-                onClick={() => setActiveView('send')}
-              />
-               <NavItem
-                icon={<ChartBarIcon className="w-5 h-5" />}
-                label="Crypto"
-                isActive={activeView === 'crypto'}
-                onClick={() => setActiveView('crypto')}
-              />
-               <NavItem
-                icon={<ShoppingBagIcon className="w-5 h-5" />}
-                label="Services"
-                isActive={activeView === 'services'}
-                onClick={() => setActiveView('services')}
-              />
-               <NavItem
-                icon={<MapPinIcon className="w-5 h-5" />}
-                label="Check-In"
-                isActive={activeView === 'checkin'}
-                onClick={() => setActiveView('checkin')}
-              />
-              <NavItem
-                icon={<UserGroupIcon className="w-5 h-5" />}
-                label="Recipients"
-                isActive={activeView === 'recipients'}
-                onClick={() => setActiveView('recipients')}
-              />
-               <NavItem
-                icon={<CreditCardIcon className="w-5 h-5" />}
-                label="Cards"
-                isActive={activeView === 'cards'}
-                onClick={() => setActiveView('cards')}
-              />
-               <NavItem
-                icon={<CashIcon className="w-5 h-5" />}
-                label="Loans"
-                isActive={activeView === 'loans'}
-                onClick={() => setActiveView('loans')}
-              />
-              <NavItem
-                icon={<LifebuoyIcon className="w-5 h-5" />}
-                label="Insurance"
-                isActive={activeView === 'insurance'}
-                onClick={() => setActiveView('insurance')}
-              />
-              <NavItem
-                icon={<ActivityIcon className="w-5 h-5" />}
-                label="History"
-                isActive={activeView === 'history'}
-                onClick={() => setActiveView('history')}
-              />
-               <NavItem
-                icon={<QuestionMarkCircleIcon className="w-5 h-5" />}
-                label="Support"
-                isActive={activeView === 'support'}
-                onClick={() => setActiveView('support')}
-              />
-              <NavItem
-                icon={<CogIcon className="w-5 h-5" />}
-                label="Security"
-                isActive={activeView === 'security'}
-                onClick={() => setActiveView('security')}
-              />
-            </nav>
-            <div className="pl-4 flex items-center space-x-4">
+    <>
+      <header className="bg-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              {/* Menu Button */}
+              <button 
+                onClick={() => setIsMenuOpen(true)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-slate-600 hover:text-primary shadow-digital active:shadow-digital-inset transition-all"
+                aria-label="Open menu"
+              >
+                <MenuIcon className="w-6 h-6" />
+                <span className="font-semibold hidden sm:inline">Menu</span>
+              </button>
+              
+              <div className="flex items-center space-x-2">
+                <ApexBankLogo />
+                <h1 className="text-2xl font-bold text-slate-800 hidden md:block">ApexBank</h1>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
                <div className="relative" ref={notificationsRef}>
                   <button
                     onClick={toggleNotifications}
@@ -164,18 +81,26 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                   </button>
                   {showNotifications && <NotificationsPanel notifications={notifications} onClose={() => setShowNotifications(false)} />}
                </div>
+
                <button
                 onClick={onLogout}
                 className="flex items-center justify-center space-x-2 text-slate-600 hover:text-primary transition-all duration-300 px-4 py-2 rounded-lg shadow-digital active:shadow-digital-inset"
                 aria-label="Logout"
               >
                 <LogoutIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">Logout</span>
+                <span className="text-sm font-medium hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <MegaMenu 
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        activeView={activeView}
+        setActiveView={setActiveView}
+      />
+    </>
   );
 };

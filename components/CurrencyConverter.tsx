@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { SUPPORTED_COUNTRIES, EXCHANGE_RATES } from '../constants';
+import { SUPPORTED_COUNTRIES, EXCHANGE_RATES, CURRENCY_TO_COUNTRY_CODE } from '../constants';
 import { ArrowsRightLeftIcon } from './Icons';
 
 export const CurrencyConverter: React.FC = () => {
@@ -43,12 +43,20 @@ export const CurrencyConverter: React.FC = () => {
             {/* From Input */}
             <div className="md:col-span-2">
                 <label htmlFor="from-amount" className="block text-sm font-medium text-slate-700 mb-1">From</label>
-                <div className="flex rounded-md shadow-digital-inset">
+                <div className="flex items-center rounded-md shadow-digital-inset bg-slate-200">
+                    <div className="p-3 border-r border-slate-300">
+                        <img 
+                            key={fromCurrency} 
+                            src={`https://flagcdn.com/w40/${CURRENCY_TO_COUNTRY_CODE[fromCurrency]?.toLowerCase()}.png`} 
+                            alt={`${fromCurrency} flag`}
+                            className="w-5 h-auto animate-flag-pop"
+                        />
+                    </div>
                     <select 
                         id="from-currency" 
                         value={fromCurrency} 
                         onChange={(e) => setFromCurrency(e.target.value)}
-                        className="p-3 border-0 rounded-l-md focus:ring-2 focus:ring-primary-400 z-10 bg-transparent"
+                        className="p-3 border-0 focus:ring-0 z-10 bg-transparent font-semibold"
                         aria-label="From currency"
                     >
                         {uniqueCurrencies.map(c => <option key={c.currency} value={c.currency}>{c.currency}</option>)}
@@ -58,7 +66,7 @@ export const CurrencyConverter: React.FC = () => {
                         id="from-amount" 
                         value={amount} 
                         onChange={(e) => setAmount(e.target.value)} 
-                        className="block w-full border-0 p-3 rounded-r-md focus:ring-2 focus:ring-primary-400 bg-transparent"
+                        className="block w-full border-0 p-3 rounded-r-md bg-transparent text-right font-mono text-lg"
                         placeholder="0.00"
                     />
                 </div>
@@ -78,12 +86,20 @@ export const CurrencyConverter: React.FC = () => {
             {/* To Input (Result) */}
             <div className="md:col-span-2">
                 <label htmlFor="to-amount" className="block text-sm font-medium text-slate-700 mb-1">To</label>
-                 <div className="flex rounded-md shadow-digital-inset">
+                 <div className="flex items-center rounded-md shadow-digital-inset bg-slate-200">
+                    <div className="p-3 border-r border-slate-300">
+                        <img 
+                            key={toCurrency}
+                            src={`https://flagcdn.com/w40/${CURRENCY_TO_COUNTRY_CODE[toCurrency]?.toLowerCase()}.png`} 
+                            alt={`${toCurrency} flag`}
+                            className="w-5 h-auto animate-flag-pop"
+                        />
+                    </div>
                     <select 
                         id="to-currency" 
                         value={toCurrency} 
                         onChange={(e) => setToCurrency(e.target.value)}
-                        className="p-3 border-0 rounded-l-md focus:ring-2 focus:ring-primary-400 z-10 bg-transparent"
+                        className="p-3 border-0 focus:ring-0 z-10 bg-transparent font-semibold"
                         aria-label="To currency"
                     >
                         {uniqueCurrencies.map(c => <option key={c.currency} value={c.currency}>{c.currency}</option>)}
@@ -93,7 +109,7 @@ export const CurrencyConverter: React.FC = () => {
                         id="to-amount" 
                         value={convertedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         readOnly
-                        className="block w-full p-3 border-0 rounded-r-md bg-transparent text-slate-800 font-semibold focus:outline-none"
+                        className="block w-full p-3 border-0 rounded-r-md bg-transparent text-right font-mono text-lg text-slate-800 font-semibold focus:outline-none"
                         aria-label="Converted amount"
                     />
                 </div>
