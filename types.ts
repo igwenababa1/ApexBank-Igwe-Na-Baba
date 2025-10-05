@@ -21,6 +21,7 @@ export enum NotificationType {
   LOAN = 'loan',
   CRYPTO = 'crypto',
   SUBSCRIPTION = 'subscription',
+  TRAVEL = 'travel',
 }
 
 export interface Notification {
@@ -239,17 +240,68 @@ export interface SubscriptionService {
     isPaid: boolean;
 }
 
+export type SpendingCategory = 'Electronics' | 'Transport' | 'Food & Drink' | 'Groceries' | 'Shopping' | 'Entertainment' | 'Other';
+
+export const SPENDING_CATEGORIES: SpendingCategory[] = ['Electronics', 'Transport', 'Food & Drink', 'Groceries', 'Shopping', 'Entertainment', 'Other'];
+
+
+export interface SpendingLimit {
+    category: SpendingCategory;
+    limit: number; // The monthly limit in USD
+}
+
 export interface AppleCardDetails {
     lastFour: string;
     balance: number;
     creditLimit: number;
     availableCredit: number;
+    spendingLimits: SpendingLimit[];
 }
 
 export interface AppleCardTransaction {
     id: string;
     vendor: string;
-    category: string;
+    category: SpendingCategory;
     amount: number;
     date: Date;
+}
+
+// Travel Check-In
+export enum TravelPlanStatus {
+    UPCOMING = 'Upcoming',
+    ACTIVE = 'Active',
+    COMPLETED = 'Completed',
+}
+
+export interface TravelPlan {
+    id: string;
+    country: Country;
+    startDate: Date;
+    endDate: Date;
+    status: TravelPlanStatus;
+}
+
+// Security
+export interface SecuritySettings {
+  mfaEnabled: boolean;
+  biometricsEnabled: boolean;
+}
+
+export interface TrustedDevice {
+  id: string;
+  deviceType: 'desktop' | 'mobile';
+  browser: string;
+  location: string;
+  lastLogin: Date;
+  isCurrent: boolean;
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  profilePictureUrl: string;
+  lastLogin: {
+    date: Date;
+    from: string; // e.g., 'New York, NY'
+  };
 }

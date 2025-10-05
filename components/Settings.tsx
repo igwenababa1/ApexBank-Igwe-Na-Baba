@@ -1,14 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { CheckCircleIcon, PencilIcon, DevicePhoneMobileIcon, FingerprintIcon, LockClosedIcon, UserCircleIcon, NetworkIcon, IdentificationIcon } from './Icons';
-import { TransferLimits, VerificationLevel } from '../types';
+import { CheckCircleIcon, PencilIcon, DevicePhoneMobileIcon, FingerprintIcon, LockClosedIcon, UserCircleIcon, NetworkIcon, IdentificationIcon, ComputerDesktopIcon } from './Icons';
+import { TransferLimits, VerificationLevel, SecuritySettings, TrustedDevice } from '../types';
 import { ManageLimitsModal } from './ManageLimitsModal';
 import { VerificationCenter } from './VerificationCenter';
+import { Setup2FAModal } from './Setup2FAModal';
+import { SetupBiometricsModal } from './SetupBiometricsModal';
 
 interface SettingsProps {
   transferLimits: TransferLimits;
   onUpdateLimits: (newLimits: TransferLimits) => void;
   verificationLevel: VerificationLevel;
   onVerificationComplete: (level: VerificationLevel) => void;
+  securitySettings: SecuritySettings;
+  onUpdateSecuritySettings: (newSettings: Partial<SecuritySettings>) => void;
+  trustedDevices: TrustedDevice[];
+  onRevokeDevice: (deviceId: string) => void;
 }
 
 const SecurityScore: React.FC<{ score: number }> = ({ score }) => {
@@ -42,20 +48,29 @@ const SecurityScore: React.FC<{ score: number }> = ({ score }) => {
 };
 
 
-export const Security: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimits, verificationLevel, onVerificationComplete }) => {
+export const Security: React.FC<SettingsProps> = ({ 
+    transferLimits, 
+    onUpdateLimits, 
+    verificationLevel, 
+    onVerificationComplete,
+    securitySettings,
+    onUpdateSecuritySettings,
+    trustedDevices,
+    onRevokeDevice
+}) => {
   const [isLimitsModalOpen, setIsLimitsModalOpen] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [biometricsEnabled, setBiometricsEnabled] = useState(true);
+  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
+  const [isBiometricsModalOpen, setIsBiometricsModalOpen] = useState(false);
 
   const securityScore = useMemo(() => {
     let score = 25; // Base score
-    if (mfaEnabled) score += 25;
-    if (biometricsEnabled) score += 25;
+    if (securitySettings.mfaEnabled) score += 25;
+    if (securitySettings.biometricsEnabled) score += 25;
     if (verificationLevel === VerificationLevel.LEVEL_1) score += 12.5;
     if (verificationLevel === VerificationLevel.LEVEL_2) score += 25;
     return Math.round(score);
-  }, [mfaEnabled, biometricsEnabled, verificationLevel]);
+  }, [securitySettings, verificationLevel]);
 
   const handleSaveLimits = (newLimits: TransferLimits) => {
     onUpdateLimits(newLimits);
@@ -75,6 +90,26 @@ export const Security: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
     }
   };
 
+    const TrustedDeviceRow: React.FC<{ device: TrustedDevice }> = ({ device }) => {
+    const DeviceIcon = device.deviceType === 'desktop' ? ComputerDesktopIcon : DevicePhoneMobileIcon;
+    return (
+        <div className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center first:pt-0 last:pb-0">
+            <div className="flex items-start space-x-4">
+                <DeviceIcon className="w-6 h-6 text-slate-500 mt-0.5 flex-shrink-0"/>
+                <div>
+                    <p className="font-medium text-slate-700 flex items-center">{device.browser} {device.isCurrent && <span className="ml-2 text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Current</span>}</p>
+                    <p className="text-sm text-slate-500">{device.location} • Last login: {new Date(device.lastLogin).toLocaleDateString()}</p>
+                </div>
+            </div>
+            {!device.isCurrent && (
+                <button onClick={() => onRevokeDevice(device.id)} className="mt-2 sm:mt-0 px-3 py-1.5 text-sm font-medium text-red-600 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
+                    Revoke
+                </button>
+            )}
+        </div>
+    );
+  };
+
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -91,13 +126,13 @@ export const Security: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
                 <h3 className="text-lg font-bold text-slate-800">Your Security Score is {securityScore > 80 ? 'Excellent' : 'Good'}</h3>
                 <p className="text-sm text-slate-600 mt-1">Follow our recommendations to keep your account as secure as possible.</p>
                 <div className="mt-4 space-y-3">
-                    <div className={`flex items-center space-x-3 text-sm ${biometricsEnabled ? 'text-green-600' : 'text-slate-600'}`}>
-                        <CheckCircleIcon className={`w-5 h-5 ${biometricsEnabled ? '' : 'text-slate-300'}`} />
-                        <span>Biometric Login is {biometricsEnabled ? 'Enabled' : 'Disabled'}</span>
+                    <div className={`flex items-center space-x-3 text-sm ${securitySettings.biometricsEnabled ? 'text-green-600' : 'text-slate-600'}`}>
+                        <CheckCircleIcon className={`w-5 h-5 ${securitySettings.biometricsEnabled ? '' : 'text-slate-300'}`} />
+                        <span>Biometric Login is {securitySettings.biometricsEnabled ? 'Enabled' : 'Disabled'}</span>
                     </div>
-                     <div className={`flex items-center space-x-3 text-sm ${mfaEnabled ? 'text-green-600' : 'text-slate-600'}`}>
-                        <CheckCircleIcon className={`w-5 h-5 ${mfaEnabled ? '' : 'text-slate-300'}`} />
-                        <span>Multi-Factor Authentication is {mfaEnabled ? 'Enabled' : 'Disabled'}</span>
+                     <div className={`flex items-center space-x-3 text-sm ${securitySettings.mfaEnabled ? 'text-green-600' : 'text-slate-600'}`}>
+                        <CheckCircleIcon className={`w-5 h-5 ${securitySettings.mfaEnabled ? '' : 'text-slate-300'}`} />
+                        <span>Two-Factor Authentication is {securitySettings.mfaEnabled ? 'Enabled' : 'Disabled'}</span>
                     </div>
                     <div className={`flex items-center space-x-3 text-sm`}>
                          <CheckCircleIcon className={`w-5 h-5 ${verificationLevel !== VerificationLevel.UNVERIFIED ? 'text-green-600' : 'text-slate-300'}`} />
@@ -136,10 +171,15 @@ export const Security: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
                         <p className="text-sm text-slate-500">Sign in quickly with your face or fingerprint.</p>
                     </div>
                 </div>
-                 <label htmlFor="bio-toggle" className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="bio-toggle" className="sr-only peer" checked={biometricsEnabled} onChange={() => setBiometricsEnabled(prev => !prev)} />
-                    <div className="w-11 h-6 bg-slate-200 rounded-full peer shadow-digital-inset peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-digital peer-checked:bg-primary"></div>
-                </label>
+                 {securitySettings.biometricsEnabled ? (
+                    <button onClick={() => onUpdateSecuritySettings({ biometricsEnabled: false })} className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
+                        Disable
+                    </button>
+                 ) : (
+                    <button onClick={() => setIsBiometricsModalOpen(true)} className="px-3 py-1.5 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
+                        Enable
+                    </button>
+                 )}
             </div>
             <div className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
                 <div className="flex items-start space-x-4">
@@ -157,18 +197,30 @@ export const Security: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
                 <div className="flex items-start space-x-4">
                     <DevicePhoneMobileIcon className="w-6 h-6 text-slate-500 mt-0.5 flex-shrink-0"/>
                     <div>
-                        <p className="font-medium text-slate-700">Multi-Factor Authentication (MFA)</p>
+                        <p className="font-medium text-slate-700">Two-Factor Authentication (2FA)</p>
                         <p className="text-sm text-slate-500">Add an extra layer of security to your account.</p>
                     </div>
                 </div>
-                <label htmlFor="mfa-toggle" className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="mfa-toggle" className="sr-only peer" checked={mfaEnabled} onChange={() => setMfaEnabled(prev => !prev)} />
-                    <div className="w-11 h-6 bg-slate-200 rounded-full peer shadow-digital-inset peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-digital peer-checked:bg-primary"></div>
-                </label>
+                {securitySettings.mfaEnabled ? (
+                    <button onClick={() => onUpdateSecuritySettings({ mfaEnabled: false })} className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
+                        Disable
+                    </button>
+                ) : (
+                    <button onClick={() => setIs2FAModalOpen(true)} className="px-3 py-1.5 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
+                        Enable
+                    </button>
+                )}
             </div>
           </div>
         </div>
         
+        <div className="bg-slate-200 rounded-2xl shadow-digital">
+          <div className="p-6 border-b border-slate-300"><h2 className="text-xl font-bold text-slate-800">Trusted Devices & Sessions</h2></div>
+          <div className="p-6 divide-y divide-slate-300">
+             {trustedDevices.map(device => <TrustedDeviceRow key={device.id} device={device} />)}
+          </div>
+        </div>
+
         <div className="bg-slate-200 rounded-2xl shadow-digital">
           <div className="p-6 border-b border-slate-300 flex justify-between items-center">
             <h2 className="text-xl font-bold text-slate-800">Transfer Limits</h2>
@@ -201,24 +253,6 @@ export const Security: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
               </div>
           </div>
         </div>
-
-        <div className="bg-slate-200 rounded-2xl shadow-digital">
-          <div className="p-6 border-b border-slate-300"><h2 className="text-xl font-bold text-slate-800">Third-Party Access</h2></div>
-          <div className="p-6 divide-y divide-slate-300">
-             <div className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
-                <div className="flex items-start space-x-4">
-                    <NetworkIcon className="w-6 h-6 text-slate-500 mt-0.5 flex-shrink-0"/>
-                    <div>
-                        <p className="font-medium text-slate-700">Apex Assurance</p>
-                        <p className="text-sm text-slate-500">Access to transaction history for insurance quotes.</p>
-                    </div>
-                </div>
-                <button className="px-3 py-1.5 text-sm font-medium text-red-600 bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow">
-                    Revoke
-                </button>
-            </div>
-          </div>
-        </div>
       </div>
       {isLimitsModalOpen && (
         <ManageLimitsModal 
@@ -232,6 +266,18 @@ export const Security: React.FC<SettingsProps> = ({ transferLimits, onUpdateLimi
             currentLevel={verificationLevel}
             onClose={handleVerificationModalClose}
         />
+      )}
+       {is2FAModalOpen && (
+          <Setup2FAModal 
+            onClose={() => setIs2FAModalOpen(false)}
+            onEnable={() => onUpdateSecuritySettings({ mfaEnabled: true })}
+          />
+      )}
+      {isBiometricsModalOpen && (
+          <SetupBiometricsModal 
+            onClose={() => setIsBiometricsModalOpen(false)}
+            onEnable={() => onUpdateSecuritySettings({ biometricsEnabled: true })}
+          />
       )}
     </>
   );

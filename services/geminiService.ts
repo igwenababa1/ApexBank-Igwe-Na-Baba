@@ -96,6 +96,17 @@ export const getBankIntroNote = async (): Promise<BankIntroNoteResult> => {
     return result;
   } catch (error) {
     console.error("Error fetching bank intro note from Gemini:", error);
+    
+    const errorString = (error as Error).toString();
+    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+        const rateLimitNote = "Our AI is currently experiencing high demand. In the meantime, experience the future of global finance with ApexBank's seamless international transfers, offering unparalleled speed and bank-grade security.";
+        const result = { note: rateLimitNote, isError: true };
+        // Cache the rate-limited response to avoid retries for this session.
+        tipCache.set(introNoteCacheKey, { tip: result.note, isError: result.isError });
+        return result;
+    }
+
+    // Generic error fallback
     return {
       note: `We're currently experiencing high traffic. Our mission is to provide seamless global finance with top-tier security. We invite you to explore how.`,
       isError: true,
@@ -109,9 +120,16 @@ export interface FinancialNewsResult {
   isError: boolean;
 }
 
+const newsCache = new Map<string, FinancialNewsResult>();
+const newsCacheKey = 'financialNews';
+
 export const getFinancialNews = async (): Promise<FinancialNewsResult> => {
+  if (newsCache.has(newsCacheKey)) {
+    return newsCache.get(newsCacheKey)!;
+  }
+
   if (!ai) {
-    return {
+    const result = {
       articles: [
         { title: 'Global Markets Show Mixed Signals', summary: 'Major indices are fluctuating as investors weigh inflation concerns against positive corporate earnings.', category: 'Market Analysis' },
         { title: 'USD Strengthens Against EUR', summary: 'The US Dollar has gained ground following the latest Federal Reserve meeting minutes.', category: 'Currency Update' },
@@ -119,6 +137,8 @@ export const getFinancialNews = async (): Promise<FinancialNewsResult> => {
       ],
       isError: false,
     };
+    newsCache.set(newsCacheKey, result);
+    return result;
   }
 
   try {
@@ -135,19 +155,39 @@ export const getFinancialNews = async (): Promise<FinancialNewsResult> => {
     }
     
     const articles = JSON.parse(jsonString);
-    return { articles, isError: false };
+    const result = { articles, isError: false };
+    newsCache.set(newsCacheKey, result);
+    return result;
 
   } catch (error) {
     console.error("Error fetching financial news from Gemini:", error);
-    return {
-      articles: [],
-      isError: true,
-    };
+    
+    const errorString = (error as Error).toString();
+    let result: FinancialNewsResult;
+
+    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+        result = {
+             articles: [
+                { title: 'AI News Feed Unavailable', summary: 'Our AI-powered news feed is currently at capacity. Please check back later.', category: 'System Alert' }
+             ],
+             isError: true,
+        };
+    } else {
+        // Generic error (like the 500 reported)
+        result = {
+            articles: [
+                { title: 'AI News Feed Unavailable', summary: 'We are experiencing a temporary issue with our AI news service. Please try again later.', category: 'System Alert' }
+            ],
+            isError: true,
+        };
+    }
+    newsCache.set(newsCacheKey, result); // Cache the error response
+    return result;
   }
 };
 
 
-const insuranceCache = new Map<string, { product: InsuranceProduct; isError: boolean }>();
+const insuranceCache = new Map<string, { product: InsuranceProduct | null; isError: boolean }>();
 
 export const getInsuranceProductDetails = async (productName: string): Promise<{ product: InsuranceProduct | null; isError: boolean; }> => {
   if (insuranceCache.has(productName)) {
@@ -214,6 +254,20 @@ export const getInsuranceProductDetails = async (productName: string): Promise<{
     return result;
   } catch (error) {
     console.error(`Error fetching insurance details for ${productName} from Gemini:`, error);
+    const errorString = (error as Error).toString();
+    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+        // Fallback with a rate-limited message
+        const rateLimitResult = {
+            product: {
+                name: productName,
+                description: 'AI-powered product details are currently unavailable due to high demand. Please check back later.',
+                benefits: ['Comprehensive coverage information will be available soon.'],
+            },
+            isError: true,
+        };
+        insuranceCache.set(productName, rateLimitResult);
+        return rateLimitResult;
+    }
     return { product: null, isError: true };
   }
 };
@@ -270,7 +324,12 @@ export const getLoanProducts = async (): Promise<{ products: LoanProduct[]; isEr
         return result;
     } catch (error) {
         console.error("Error fetching loan products from Gemini:", error);
-        return { products: [], isError: true };
+        const errorString = (error as Error).toString();
+        const result = { products: [], isError: true };
+        if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+            loanCache.set(cacheKey, result);
+        }
+        return result;
     }
 };
 
@@ -297,7 +356,13 @@ export const getSupportAnswer = async (query: string): Promise<{ answer: string;
     return result;
   } catch (error) {
     console.error(`Error fetching support answer for "${query}" from Gemini:`, error);
-    return { answer: "I'm sorry, but I was unable to process your request at this time. Please try rephrasing your question or contact our human support team for assistance.", isError: true };
+    const errorString = (error as Error).toString();
+    const result = { answer: "I'm sorry, but I was unable to process your request at this time. Please try rephrasing your question or contact our human support team for assistance.", isError: true };
+    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+        result.answer = "Our AI assistant is currently experiencing high demand. Please try again in a few moments or contact our human support team."
+        supportCache.set(query, result);
+    }
+    return result;
   }
 };
 
@@ -335,9 +400,9 @@ export const getSystemUpdates = async (): Promise<{ updates: SystemUpdate[]; isE
                             items: {
                                 type: Type.OBJECT,
                                 properties: {
-                                    id: { type: Type.STRING, description: "A unique identifier for the update." },
+                                    id: { type: Type.STRING, description: "A unique, non-repeating identifier for the update, e.g., 'update-123'." },
                                     title: { type: Type.STRING, description: "The title of the update." },
-                                    date: { type: Type.STRING, description: "The date of the announcement in ISO 8601 format." },
+                                    date: { type: Type.STRING, description: "The date of the announcement in a valid ISO 8601 format (e.g., '2024-07-15T10:00:00Z')." },
                                     description: { type: Type.STRING, description: "A brief summary of the changes." },
                                     category: { 
                                         type: Type.STRING, 
@@ -358,7 +423,12 @@ export const getSystemUpdates = async (): Promise<{ updates: SystemUpdate[]; isE
         return result;
     } catch (error) {
         console.error("Error fetching system updates from Gemini:", error);
-        return { updates: [], isError: true };
+        const errorString = (error as Error).toString();
+        const result = { updates: [], isError: true };
+        if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+            updatesCache.set(updatesCacheKey, result);
+        }
+        return result;
     }
 };
 
@@ -405,6 +475,11 @@ export const getAccountPerks = async (accountType: AccountType, verificationLeve
 
     } catch (error) {
         console.error("Error fetching account perks from Gemini:", error);
-        return { perks: [], isError: true };
+        const errorString = (error as Error).toString();
+        const result = { perks: [], isError: true };
+        if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+            accountPerksCache.set(cacheKey, result);
+        }
+        return result;
     }
 };

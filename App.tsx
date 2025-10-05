@@ -3,9 +3,10 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
 import { Recipients } from './components/Recipients';
-import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction } from './types';
-import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS } from './constants';
+import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile } from './types';
+import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE } from './constants';
 import { Welcome } from './components/Welcome';
+import { ProfileSignIn } from './components/ProfileSignIn';
 import { ActivityLog } from './components/ActivityLog';
 import { Security } from './components/Settings';
 import { CardManagement } from './components/CardManagement';
@@ -14,6 +15,9 @@ import { Support } from './components/Support';
 import { Accounts } from './components/Accounts';
 import { CryptoDashboard } from './components/CryptoDashboard';
 import { ServicesDashboard } from './components/ServicesDashboard';
+import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
+import { InactivityModal } from './components/InactivityModal';
+import { TravelCheckIn } from './components/TravelCheckIn';
 import {
   sendTransactionalEmail,
   generateTransactionReceiptEmail,
@@ -145,15 +149,19 @@ const Insurance: React.FC = () => {
 };
 
 
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services';
+type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin';
+type AuthStatus = 'loggedOut' | 'profileSignIn' | 'loggedIn';
 
-const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const INACTIVITY_WARNING_TIMEOUT = 9 * 60 * 1000; // 9 minutes
+const INACTIVITY_MODAL_COUNTDOWN = 60; // 60 seconds
+
 const USER_EMAIL = "eleanor.vance@apexbank.com";
 const USER_NAME = "Eleanor Vance";
 const USER_PHONE = "+1-555-012-1234";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loggedOut');
+  const [isNewAccountLogin, setIsNewAccountLogin] = useState(false);
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
   const [recipients, setRecipients] = useState<Recipient[]>(INITIAL_RECIPIENTS);
@@ -168,10 +176,21 @@ function App() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionService[]>(INITIAL_SUBSCRIPTIONS);
   const [appleCardDetails, setAppleCardDetails] = useState<AppleCardDetails>(INITIAL_APPLE_CARD_DETAILS);
   const [appleCardTransactions, setAppleCardTransactions] = useState<AppleCardTransaction[]>(INITIAL_APPLE_CARD_TRANSACTIONS);
+  const [travelPlans, setTravelPlans] = useState<TravelPlan[]>(INITIAL_TRAVEL_PLANS);
+  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>(INITIAL_SECURITY_SETTINGS);
+  const [trustedDevices, setTrustedDevices] = useState<TrustedDevice[]>(INITIAL_TRUSTED_DEVICES);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const inactivityTimerRef = React.useRef<number>();
   
-  const handleLogin = (isNewAccount = false) => {
-    setIsAuthenticated(true);
-    if (isNewAccount) {
+  const handleCredentialsSuccess = (isNewAccount = false) => {
+    setIsNewAccountLogin(isNewAccount);
+    setAuthStatus('profileSignIn');
+  };
+
+  const handleEnterDashboard = () => {
+    setAuthStatus('loggedIn');
+    if (isNewAccountLogin) {
         addNotification(
             NotificationType.SECURITY,
             'Welcome to ApexBank!',
@@ -192,8 +211,15 @@ function App() {
     }
   };
   
-  const handleLogout = useCallback(() => {
-    setIsAuthenticated(false);
+  const handleInitiateLogout = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const handleConfirmLogout = useCallback(() => {
+    clearTimeout(inactivityTimerRef.current);
+    setShowInactivityModal(false);
+    setIsLogoutModalOpen(false);
+    setAuthStatus('loggedOut');
     setActiveView('dashboard');
     setNotifications([]); // Clear notifications on logout
   }, []);
@@ -583,37 +609,97 @@ function App() {
   };
   
   // --- End Crypto Functions ---
+  
+  // --- Apple Card Functions ---
+  const handleUpdateSpendingLimits = (newLimits: SpendingLimit[]) => {
+      setAppleCardDetails(prev => ({
+          ...prev,
+          spendingLimits: newLimits
+      }));
+      addNotification(
+          NotificationType.CARD,
+          'Spending Limits Updated',
+          'Your Apple Card spending limits have been successfully updated.'
+      );
+  };
+
+  const handleUpdateTransactionCategory = (transactionId: string, newCategory: SpendingCategory) => {
+      setAppleCardTransactions(prev => 
+          prev.map(tx => tx.id === transactionId ? { ...tx, category: newCategory } : tx)
+      );
+  };
+  // --- End Apple Card Functions ---
+
+  // --- Travel Check-In Functions ---
+  const addTravelPlan = (country: Country, startDate: Date, endDate: Date) => {
+    const newPlan: TravelPlan = {
+      id: `travel_${Date.now()}`,
+      country,
+      startDate,
+      endDate,
+      status: TravelPlanStatus.UPCOMING, // Will be updated by effect
+    };
+    setTravelPlans(prev => [...prev, newPlan].sort((a,b) => a.startDate.getTime() - b.startDate.getTime()));
+    addNotification(
+      NotificationType.TRAVEL,
+      'Travel Plan Added',
+      `Your travel notice for ${country.name} has been successfully registered.`
+    );
+  };
+  // --- End Travel Check-In Functions ---
+  
+  // --- Security Functions ---
+    const handleUpdateSecuritySettings = (newSettings: Partial<SecuritySettings>) => {
+      setSecuritySettings(prev => ({ ...prev, ...newSettings }));
+      const [key, value] = Object.entries(newSettings)[0];
+      const featureName = key === 'mfaEnabled' ? 'Two-Factor Authentication' : 'Biometric Login';
+       addNotification(
+            NotificationType.SECURITY,
+            `Security Setting Updated`,
+            `${featureName} has been ${value ? 'enabled' : 'disabled'}.`
+        );
+    };
+
+    const handleRevokeDevice = (deviceId: string) => {
+      setTrustedDevices(prev => prev.filter(d => d.id !== deviceId));
+      addNotification(
+        NotificationType.SECURITY,
+        'Device Access Revoked',
+        `Access has been revoked for one of your trusted devices.`
+      );
+    };
+  // --- End Security Functions ---
+
 
   useEffect(() => {
     const intervalId = setInterval(updateTransactionStatuses, 2000); // Check every 2 seconds
     return () => clearInterval(intervalId);
   }, [updateTransactionStatuses]);
   
-  useEffect(() => {
-    let inactivityTimer: ReturnType<typeof setTimeout>;
+  const resetInactivityTimer = useCallback(() => {
+    clearTimeout(inactivityTimerRef.current);
+    setShowInactivityModal(false);
 
-    const resetTimer = () => {
-      clearTimeout(inactivityTimer);
-      if (isAuthenticated) {
-        inactivityTimer = setTimeout(() => {
-          alert("You've been logged out due to inactivity.");
-          handleLogout();
-        }, INACTIVITY_TIMEOUT);
-      }
-    };
-    
-    if (isAuthenticated) {
-      window.addEventListener('mousemove', resetTimer);
-      window.addEventListener('keypress', resetTimer);
-      resetTimer();
+    if (authStatus === 'loggedIn') {
+      inactivityTimerRef.current = window.setTimeout(() => {
+        setShowInactivityModal(true);
+      }, INACTIVITY_WARNING_TIMEOUT);
+    }
+  }, [authStatus]);
+
+  useEffect(() => {
+    if (authStatus === 'loggedIn') {
+      window.addEventListener('mousemove', resetInactivityTimer);
+      window.addEventListener('keypress', resetInactivityTimer);
+      resetInactivityTimer();
     }
 
     return () => {
-      clearTimeout(inactivityTimer);
-      window.removeEventListener('mousemove', resetTimer);
-      window.removeEventListener('keypress', resetTimer);
+      clearTimeout(inactivityTimerRef.current);
+      window.removeEventListener('mousemove', resetInactivityTimer);
+      window.removeEventListener('keypress', resetInactivityTimer);
     };
-  }, [isAuthenticated, handleLogout]);
+  }, [authStatus, resetInactivityTimer]);
 
   const renderContent = () => {
     const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -624,7 +710,7 @@ function App() {
 
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} />;
+        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
       case 'accounts':
         return <Accounts accounts={accounts} transactions={transactions} verificationLevel={verificationLevel} onUpdateAccountNickname={handleUpdateAccountNickname} />;
       case 'send':
@@ -647,8 +733,12 @@ function App() {
           subscriptions={subscriptions} 
           appleCardDetails={appleCardDetails}
           appleCardTransactions={appleCardTransactions}
-          onPaySubscription={handlePaySubscription} 
+          onPaySubscription={handlePaySubscription}
+          onUpdateSpendingLimits={handleUpdateSpendingLimits}
+          onUpdateTransactionCategory={handleUpdateTransactionCategory}
         />;
+      case 'checkin':
+        return <TravelCheckIn travelPlans={travelPlans} addTravelPlan={addTravelPlan} />;
       case 'loans':
         return <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification}/>;
       case 'insurance':
@@ -658,14 +748,27 @@ function App() {
       case 'support':
           return <Support />;
       case 'security':
-        return <Security transferLimits={transferLimits} onUpdateLimits={setTransferLimits} verificationLevel={verificationLevel} onVerificationComplete={setVerificationLevel} />;
+        return <Security 
+          transferLimits={transferLimits} 
+          onUpdateLimits={setTransferLimits} 
+          verificationLevel={verificationLevel} 
+          onVerificationComplete={setVerificationLevel}
+          securitySettings={securitySettings}
+          onUpdateSecuritySettings={handleUpdateSecuritySettings}
+          trustedDevices={trustedDevices}
+          onRevokeDevice={handleRevokeDevice}
+        />;
       default:
-        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue}/>;
+        return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
     }
   };
 
-  if (!isAuthenticated) {
-    return <Welcome onLogin={handleLogin} />;
+  if (authStatus === 'loggedOut') {
+    return <Welcome onLogin={handleCredentialsSuccess} />;
+  }
+  
+  if (authStatus === 'profileSignIn') {
+    return <ProfileSignIn user={USER_PROFILE} onEnterDashboard={handleEnterDashboard} />;
   }
 
   return (
@@ -673,13 +776,26 @@ function App() {
       <Header 
         activeView={activeView} 
         setActiveView={setActiveView} 
-        onLogout={handleLogout}
+        onLogout={handleInitiateLogout}
         notifications={notifications}
         onMarkNotificationsAsRead={markNotificationsAsRead}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </main>
+      {isLogoutModalOpen && (
+        <LogoutConfirmationModal
+          onClose={() => setIsLogoutModalOpen(false)}
+          onConfirm={handleConfirmLogout}
+        />
+      )}
+      {showInactivityModal && (
+        <InactivityModal
+          onStayLoggedIn={resetInactivityTimer}
+          onLogout={handleConfirmLogout}
+          countdownStart={INACTIVITY_MODAL_COUNTDOWN}
+        />
+      )}
     </div>
   );
 }

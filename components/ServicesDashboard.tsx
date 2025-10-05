@@ -1,5 +1,5 @@
 import React from 'react';
-import { SubscriptionService, AppleCardDetails, AppleCardTransaction } from '../types';
+import { SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory } from '../types';
 import { SubscriptionManager } from './SubscriptionManager';
 import { AppleCardManager } from './AppleCardManager';
 
@@ -8,9 +8,18 @@ interface ServicesDashboardProps {
     appleCardDetails: AppleCardDetails;
     appleCardTransactions: AppleCardTransaction[];
     onPaySubscription: (subscriptionId: string) => boolean;
+    onUpdateSpendingLimits: (limits: SpendingLimit[]) => void;
+    onUpdateTransactionCategory: (transactionId: string, category: SpendingCategory) => void;
 }
 
-export const ServicesDashboard: React.FC<ServicesDashboardProps> = ({ subscriptions, appleCardDetails, appleCardTransactions, onPaySubscription }) => {
+export const ServicesDashboard: React.FC<ServicesDashboardProps> = ({ 
+    subscriptions, 
+    appleCardDetails, 
+    appleCardTransactions, 
+    onPaySubscription,
+    onUpdateSpendingLimits,
+    onUpdateTransactionCategory
+}) => {
     return (
         <div className="space-y-8">
             <div>
@@ -23,7 +32,12 @@ export const ServicesDashboard: React.FC<ServicesDashboardProps> = ({ subscripti
                     <SubscriptionManager subscriptions={subscriptions} onPay={onPaySubscription} />
                 </div>
                 <div className="lg:col-span-2">
-                    <AppleCardManager card={appleCardDetails} transactions={appleCardTransactions} />
+                    <AppleCardManager 
+                        card={appleCardDetails} 
+                        transactions={appleCardTransactions}
+                        onUpdateLimits={onUpdateSpendingLimits}
+                        onUpdateCategory={onUpdateTransactionCategory}
+                    />
                 </div>
             </div>
         </div>

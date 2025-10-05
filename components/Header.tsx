@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ApexBankLogo, DashboardIcon, SendIcon, UserGroupIcon, LogoutIcon, ActivityIcon, CogIcon, CreditCardIcon, BellIcon, SpinnerIcon, LifebuoyIcon, CashIcon, QuestionMarkCircleIcon, WalletIcon, ChartBarIcon, ShoppingBagIcon } from './Icons';
+import { ApexBankLogo, DashboardIcon, SendIcon, UserGroupIcon, LogoutIcon, ActivityIcon, CogIcon, CreditCardIcon, BellIcon, SpinnerIcon, LifebuoyIcon, CashIcon, QuestionMarkCircleIcon, WalletIcon, ChartBarIcon, ShoppingBagIcon, MapPinIcon } from './Icons';
 import { Notification } from '../types';
 import { NotificationsPanel } from './NotificationsPanel';
 
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services';
+type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin';
 
 interface HeaderProps {
   activeView: View;
@@ -34,7 +34,6 @@ const NavItem: React.FC<{
 
 export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLogout, notifications, onMarkNotificationsAsRead }) => {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -59,15 +58,6 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const handleLogout = () => {
-    setIsLoggingOut(true);
-    setTimeout(() => {
-        onLogout();
-        // No need to reset state, component will unmount
-    }, 1500); // 1.5 second delay
-  };
-
 
   return (
     <header className="bg-slate-200">
@@ -108,6 +98,12 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                 label="Services"
                 isActive={activeView === 'services'}
                 onClick={() => setActiveView('services')}
+              />
+               <NavItem
+                icon={<MapPinIcon className="w-5 h-5" />}
+                label="Check-In"
+                isActive={activeView === 'checkin'}
+                onClick={() => setActiveView('checkin')}
               />
               <NavItem
                 icon={<UserGroupIcon className="w-5 h-5" />}
@@ -169,22 +165,12 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                   {showNotifications && <NotificationsPanel notifications={notifications} onClose={() => setShowNotifications(false)} />}
                </div>
                <button
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="flex items-center justify-center w-[140px] h-[42px] space-x-2 text-slate-600 hover:text-primary transition-all duration-300 px-4 py-2 rounded-lg shadow-digital active:shadow-digital-inset disabled:opacity-70 disabled:cursor-wait"
+                onClick={onLogout}
+                className="flex items-center justify-center space-x-2 text-slate-600 hover:text-primary transition-all duration-300 px-4 py-2 rounded-lg shadow-digital active:shadow-digital-inset"
                 aria-label="Logout"
               >
-                {isLoggingOut ? (
-                    <>
-                        <SpinnerIcon className="w-5 h-5" />
-                        <span className="text-sm font-medium">Logging out...</span>
-                    </>
-                ) : (
-                    <>
-                        <LogoutIcon className="w-5 h-5" />
-                        <span className="text-sm font-medium">Logout</span>
-                    </>
-                )}
+                <LogoutIcon className="w-5 h-5" />
+                <span className="text-sm font-medium">Logout</span>
               </button>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Transaction, TransactionStatus, Account, AccountType, Recipient } from '../types';
-import { CheckCircleIcon, ClockIcon, EyeIcon, EyeSlashIcon, VerifiedBadgeIcon, DepositIcon, WithdrawIcon, ChevronLeftIcon, ChevronRightIcon, getBankIcon, ChartBarIcon, TrendingUpIcon } from './Icons';
+import { Transaction, TransactionStatus, Account, AccountType, Recipient, TravelPlan, TravelPlanStatus } from '../types';
+import { CheckCircleIcon, ClockIcon, EyeIcon, EyeSlashIcon, VerifiedBadgeIcon, DepositIcon, WithdrawIcon, ChevronLeftIcon, ChevronRightIcon, getBankIcon, ChartBarIcon, TrendingUpIcon, GlobeAmericasIcon } from './Icons';
 import { CurrencyConverter } from './CurrencyConverter';
 import { FinancialNews } from './FinancialNews';
 import { QuickTransfer } from './QuickTransfer';
@@ -12,7 +12,28 @@ interface DashboardProps {
   recipients: Recipient[];
   createTransaction: (transaction: Omit<Transaction, 'id' | 'status' | 'estimatedArrival' | 'statusTimestamps' | 'type'>) => Transaction | null;
   cryptoPortfolioValue: number;
+  travelPlans: TravelPlan[];
 }
+
+const ActiveTravelNotice: React.FC<{ plans: TravelPlan[] }> = ({ plans }) => {
+    if (plans.length === 0) return null;
+
+    return (
+        <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg shadow-digital" role="alert">
+            <div className="flex items-center">
+                <GlobeAmericasIcon className="w-6 h-6 mr-3 flex-shrink-0" />
+                <div>
+                    <p className="font-bold">Travel Mode is Active</p>
+                    <p className="text-sm">
+                        You have {plans.length} active travel plan{plans.length > 1 ? 's' : ''}. 
+                        Your card services are enabled for: {plans.map(p => p.country.name).join(', ')}.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const TransactionRow: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
   const isCompleted = transaction.status === TransactionStatus.FUNDS_ARRIVED;
@@ -82,13 +103,14 @@ const AccountCarouselCard: React.FC<{ account: Account; isBalanceVisible: boolea
 };
 
 
-export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, setActiveView, recipients, createTransaction, cryptoPortfolioValue }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, setActiveView, recipients, createTransaction, cryptoPortfolioValue, travelPlans }) => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
   const totalNetWorth = totalBalance + cryptoPortfolioValue;
+  const activeTravelPlans = travelPlans.filter(p => p.status === TravelPlanStatus.ACTIVE);
 
   const toggleBalanceVisibility = () => {
     setIsBalanceVisible(!isBalanceVisible);
@@ -126,6 +148,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, se
 
   return (
     <div className="space-y-8">
+      <ActiveTravelNotice plans={activeTravelPlans} />
+
       <div className="bg-slate-200 rounded-2xl p-6 shadow-digital">
         <div className="flex justify-between items-start mb-6">
             <div>
