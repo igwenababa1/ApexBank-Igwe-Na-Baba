@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Account, AccountType, Transaction, VerificationLevel } from '../types';
 import { getAccountPerks } from '../services/geminiService';
-import { SpinnerIcon, InfoIcon, ShieldCheckIcon, CreditCardIcon, PiggyBankIcon, BuildingOfficeIcon, DepositIcon, CheckCircleIcon, PencilIcon, getBankIcon } from './Icons';
+import { SpinnerIcon, InfoIcon, ShieldCheckIcon, CreditCardIcon, PiggyBankIcon, BuildingOfficeIcon, DepositIcon, CheckCircleIcon, PencilIcon, getBankIcon, ApexBankLogo } from './Icons';
+import { USER_PROFILE } from '../constants';
 
 interface AccountsProps {
     accounts: Account[];
@@ -9,6 +10,59 @@ interface AccountsProps {
     verificationLevel: VerificationLevel;
     onUpdateAccountNickname: (accountId: string, nickname: string) => void;
 }
+
+const UserProfileCard: React.FC<{ verificationLevel: VerificationLevel }> = ({ verificationLevel }) => {
+    const [isFlipped, setIsFlipped] = useState(false);
+
+    return (
+        <div className="w-full max-w-sm mx-auto cursor-pointer group" style={{ perspective: '1000px' }} onClick={() => setIsFlipped(!isFlipped)}>
+            <div
+                className="relative w-full h-56 transition-transform duration-700"
+                style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+            >
+                {/* Front */}
+                <div className="absolute w-full h-full p-6 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-lg flex flex-col justify-between" style={{ backfaceVisibility: 'hidden' }}>
+                    <div>
+                        <div className="flex justify-between items-start">
+                             <h3 className="font-bold text-xl">{USER_PROFILE.name}</h3>
+                             <ApexBankLogo />
+                        </div>
+                        <p className="text-sm opacity-80">{USER_PROFILE.email}</p>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <img src={USER_PROFILE.profilePictureUrl} alt="User" className="w-12 h-12 rounded-full border-2 border-primary-300" />
+                        <div>
+                             <p className="text-xs opacity-80">Member Since</p>
+                             <p className="font-semibold">Jan 2024</p>
+                        </div>
+                    </div>
+                </div>
+                {/* Back */}
+                 <div className="absolute w-full h-full p-6 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-800 text-white shadow-lg flex flex-col justify-between" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                    <div>
+                        <h3 className="font-bold text-lg mb-4">Account Status</h3>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex items-center space-x-2">
+                                <CheckCircleIcon className="w-5 h-5 text-green-400"/>
+                                <span>Identity: {verificationLevel}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <ShieldCheckIcon className="w-5 h-5 text-green-400"/>
+                                <span>2FA Enabled</span>
+                            </div>
+                             <div className="flex items-center space-x-2">
+                                <CreditCardIcon className="w-5 h-5 text-green-400"/>
+                                <span>3 Active Cards</span>
+                            </div>
+                        </div>
+                    </div>
+                     <p className="text-xs text-slate-400 text-right">Tap to flip back</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const AccountPerks: React.FC<{ accountType: AccountType, verificationLevel: VerificationLevel }> = ({ accountType, verificationLevel }) => {
     const [perks, setPerks] = useState<string[]>([]);
@@ -121,7 +175,8 @@ export const Accounts: React.FC<AccountsProps> = ({ accounts, transactions, veri
 
     return (
         <div className="space-y-8">
-            <div>
+            <UserProfileCard verificationLevel={verificationLevel} />
+            <div className="text-center">
                 <h2 className="text-2xl font-bold text-slate-800">My Accounts</h2>
                 <p className="text-sm text-slate-500 mt-1">View details, transactions, and features for each of your accounts.</p>
             </div>

@@ -1,5 +1,5 @@
-import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, Task } from './types';
-import { BtcIcon, EthIcon, ApxIcon } from './components/Icons';
+import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, Task, Airport, FlightBooking, UtilityBiller, UtilityBill, UtilityType } from './types';
+import { BtcIcon, EthIcon, ApxIcon, LightningBoltIcon, FireIcon, WaterDropIcon, WifiIcon } from './components/Icons';
 
 export const SUPPORTED_COUNTRIES: Country[] = [
   { code: 'US', name: 'United States', currency: 'USD' },
@@ -447,4 +447,32 @@ export const INITIAL_TASKS: Task[] = [
   { id: 'task_2', text: 'Review monthly budget with financial advisor', completed: false, dueDate: new Date(new Date().setDate(new Date().getDate() - 2)) },
   { id: 'task_3', text: 'Set up recurring transfer for rent', completed: false },
   { id: 'task_4', text: 'File expense reports for June', completed: true, dueDate: new Date(new Date().setDate(new Date().getDate() - 15)) },
+];
+
+// --- Flight Booking Constants ---
+export const AIRPORTS: Airport[] = [
+    { code: 'JFK', name: 'John F. Kennedy Intl', city: 'New York', country: 'USA' },
+    { code: 'LHR', name: 'London Heathrow', city: 'London', country: 'UK' },
+    { code: 'CDG', name: 'Charles de Gaulle', city: 'Paris', country: 'France' },
+    { code: 'HND', name: 'Tokyo Haneda', city: 'Tokyo', country: 'Japan' },
+    { code: 'SYD', name: 'Sydney Kingsford Smith', city: 'Sydney', country: 'Australia' },
+    { code: 'DXB', name: 'Dubai International', city: 'Dubai', country: 'UAE' },
+];
+
+export const INITIAL_FLIGHT_BOOKINGS: FlightBooking[] = [];
+
+
+// --- Utilities Constants ---
+export const UTILITY_BILLERS: UtilityBiller[] = [
+    { id: 'util_1', name: 'Con Edison', type: UtilityType.ELECTRICITY, icon: LightningBoltIcon, accountNumber: '****-1122' },
+    { id: 'util_2', name: 'National Grid', type: UtilityType.GAS, icon: FireIcon, accountNumber: '****-3344' },
+    { id: 'util_3', name: 'NYC Water', type: UtilityType.WATER, icon: WaterDropIcon, accountNumber: '****-5566' },
+    { id: 'util_4', name: 'Verizon Fios', type: UtilityType.INTERNET, icon: WifiIcon, accountNumber: '****-7788' },
+];
+
+export const INITIAL_UTILITY_BILLS: UtilityBill[] = [
+    { id: 'bill_1', billerId: 'util_1', amount: 125.50, dueDate: new Date(now.getTime() + 86400000 * 10), isPaid: false },
+    { id: 'bill_2', billerId: 'util_2', amount: 78.20, dueDate: new Date(now.getTime() + 86400000 * 12), isPaid: false },
+    { id: 'bill_3', billerId: 'util_3', amount: 65.00, dueDate: new Date(now.getTime() - 86400000 * 5), isPaid: true },
+    { id: 'bill_4', billerId: 'util_4', amount: 89.99, dueDate: new Date(now.getTime() + 86400000 * 15), isPaid: false },
 ];

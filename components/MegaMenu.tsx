@@ -3,7 +3,7 @@ import {
     DashboardIcon, SendIcon, UserGroupIcon, ActivityIcon, CogIcon, CreditCardIcon, 
     LifebuoyIcon, CashIcon, QuestionMarkCircleIcon, WalletIcon, ChartBarIcon, 
     ShoppingBagIcon, MapPinIcon, XIcon, ApexBankLogo, CubeTransparentIcon,
-    ClipboardDocumentIcon
+    ClipboardDocumentIcon, AirplaneTicketIcon, WrenchScrewdriverIcon
 } from './Icons';
 import { View } from '../types';
 
@@ -37,9 +37,16 @@ const menuConfig: {
             { view: 'cards', label: 'Cards', icon: CreditCardIcon },
             { view: 'recipients', label: 'Recipients', icon: UserGroupIcon },
             { view: 'history', label: 'History', icon: ActivityIcon },
-            { view: 'services', label: 'Services', icon: ShoppingBagIcon },
-            { view: 'checkin', label: 'Check-In', icon: MapPinIcon },
             { view: 'tasks', label: 'Tasks', icon: ClipboardDocumentIcon },
+        ]
+    },
+    {
+        category: 'Lifestyle & Bills',
+        items: [
+            { view: 'flights', label: 'Book Flights', icon: AirplaneTicketIcon },
+            { view: 'utilities', label: 'Pay Utilities', icon: WrenchScrewdriverIcon },
+            { view: 'services', label: 'Subscriptions', icon: ShoppingBagIcon },
+            { view: 'checkin', label: 'Travel Check-In', icon: MapPinIcon },
         ]
     },
     {

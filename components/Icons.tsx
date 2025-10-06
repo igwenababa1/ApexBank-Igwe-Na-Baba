@@ -300,154 +300,187 @@ export const CameraIcon = ({ className }: { className?: string }) => (
 
 export const UserCircleIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 
-export const HomeIcon = ({ className }: { className?: string }) => (
+// --- NEW & MISSING ICONS ---
+
+export const XIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
 );
 
-export const PlusCircleIcon = ({ className }: { className?: string }) => (
+export const MenuIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
     </svg>
-);
-
-export const VisaIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="1000" height="323" viewBox="0 0 1000 323"><path fill="#1A1F71" d="M754.7 35.2h-74.2l-98.3 252.1h80.1l17.7-47.5h85.3l10.9 47.5h75.2L754.7 35.2zm-42.6 156.9l32.3-94.6 22.8 94.6h-55.1zM928.3 35.2l-64.6 179.8-67.4-179.8h-78.2l111.4 252.1h82.5l109.2-252.1z"/><path fill="#1A1F71" d="M386 161.4c0-43.2-23.4-69.5-63.5-69.5-40.6 0-61.9 26.3-61.9 69.5 0 43.1 21.3 69.5 61.9 69.5 40.1 0 63.5-26.4 63.5-69.5zm-88.9 0c0-24.5 10.9-39.7 25.4-39.7 14.3 0 25.1 15.2 25.1 39.7 0 24.4-10.8 39.7-25.1 39.7-14.5 0-25.4-15.3-25.4-39.7zM425.2 92.2c-12 0-20.9 5.8-25.1 11.2l-2.8-9.1h-56.1v193h60.8V176c0-15.6 7.2-24.2 19-24.2 10.1 0 16.5 6.2 16.5 21.3v114.2h60.8V155c0-33.9-19.1-58.4-52.2-58.4-1.2 0-2.4 0-3.6 0zM229.7 35.2L162 287.3h60.8l67.7-252.1zM0 35.2l62.2 252.1h60.8L64.8 35.2H0z"/></svg>
-);
-
-export const MastercardIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 227">
-        <path fill="#FF5F00" d="M384 113.5c0 62.7-51 113.5-113.5 113.5S157 176.2 157 113.5 208 0 270.5 0 384 50.8 384 113.5z"/>
-        <path fill="#EB001B" d="M157 113.5c0 62.7-51 113.5-113.5 113.5S-27 176.2-27 113.5 24 0 86.5 0 157 50.8 157 113.5z"/>
-        <path fill="#F79E1B" d="M125.1 113.5c0 40.5 16.9 76.8 43.8 102.2 26.9-25.4 43.8-61.7 43.8-102.2S195.8 36.7 169 11.3c-26.9 25.5-43.8 61.8-43.8 102.2z"/>
-    </svg>
-);
-
-export const BtcIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.75 14.25h-1.5v2h-1.5v-2h-2.5v-1.5h2.5v-7h-2.5v-1.5h2.5v-2h1.5v2h1.5v1.5h-1.5v7h1.5v1.5zm-2.25-8.5h-1.5v5h1.5v-5z"/>
-    </svg>
-);
-
-export const EthIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.22 15.75l-4.22-2.54 4.22-6.46 4.22 6.46-4.22 2.54zm.01-8.03L8 12.25l4.23 2.54 4.23-2.54L12.23 9.72z"/>
-    </svg>
-);
-
-export const ApxIcon = ({ className }: { className?: string }) => (
-    <ApexBankLogo />
-);
-
-export const AppleIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17.6 12.2c-.1-2.1 1.6-3.4 1.8-3.5-.1-.1-1.3-1.1-3.3-1.1-1.6 0-3.1 1-3.9 1-.8 0-2.1-.9-3.5-.9-1.9 0-3.6 1.1-4.6 2.8-.9 1.7-1.3 4.2-.1 6.3.8 1.9 2.2 3.5 3.9 3.5 1.5 0 2.3-.9 3.8-.9s2.3.9 3.8.9c1.7 0 3-1.5 3.9-3.3.5-1 .7-2.1.1-3.3zm-3.2-6.6c.9-.9 1.4-2.1 1.3-3.2-.1.1-1.2 1-2.4 1.9-.9.8-1.6 2-1.5 3.1 1.2.2 2.2-.1 2.6-1.8z"/>
-    </svg>
-);
-
-export const UberIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.3 12.3c-.2.2-.5.3-.8.3s-.6-.1-.8-.3l-2.7-2.7v5.4c0 .6-.4 1-1 1s-1-.4-1-1v-5.4l-2.7 2.7c-.2.2-.5.3-.8.3s-.6-.1-.8-.3c-.4-.4-.4-1.2 0-1.6l4.5-4.5c.4-.4 1.2-.4 1.6 0l4.5 4.5c.4.4.4 1.2 0 1.6z"/>
-    </svg>
-);
-
-export const StarbucksIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v4h-2zm0 6h2v2h-2z"/>
-    </svg>
-);
-
-export const ArrowsRightLeftIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h18m-4.5-12L21 9m0 0L16.5 4.5M21 9H3" />
-  </svg>
 );
 
 export const GlobeAmericasIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.646 15.354A9 9 0 0115.354 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 00-8.354-5.646z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 009-9M3 12a9 9 0 009 9" />
     </svg>
 );
 
-export const CalendarDaysIcon = ({ className }: { className?: string }) => (
+export const FaceIdIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2a3 3 0 00-3 3v1m6 0V5a3 3 0 00-3-3m-3 4H6a3 3 0 00-3 3v6a3 3 0 003 3h12a3 3 0 003-3V9a3 3 0 00-3-3h-3m-6 0v2m6-2v2m-6 4a2 2 0 100 4 2 2 0 000-4zm6 0a2 2 0 100 4 2 2 0 000-4z" />
     </svg>
 );
 
-export const CheckBadgeIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
-        <path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12c0 1.357-.6 2.573-1.549 3.397a4.49 4.49 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.491 4.491 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+export const ComputerDesktopIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v1a3 3 0 003 3h0a3 3 0 003-3v-1m-6 0H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5m-6 0v-1m6 1v-1m-6 0H9" />
     </svg>
 );
 
-const bankIconMap: { [key: string]: React.FC<{ className?: string }> } = {
-  'chase': ({ className }) => <svg className={className} viewBox="0 0 100 100"><path fill="#117ACA" d="M50 0L0 25v50l50 25 50-25V25L50 0zm0 10l40 20v40L50 90 10 70V30L50 10z"/><path fill="#117ACA" d="M50 15L20 30v40l30 15 30-15V30L50 15zm0 10l20 10v20L50 65 30 55V35l20-10z"/></svg>,
-  'america': ({ className }) => <svg className={className} viewBox="0 0 100 100"><path fill="#E31837" d="M0 25h100v50H0z"/><path fill="#FFFFFF" d="M0 25h33v50H0zM67 25h33v50H67z"/><path fill="#002868" d="M33 25h34v50H33z"/></svg>,
-  'wells': ({ className }) => <svg className={className} viewBox="0 0 100 100"><path fill="#D71E28" d="M50 5l10 20h21l-17 12 6 22-19-14-19 14 6-22-17-12h21z"/></svg>,
-  'default': BankIcon,
-};
+export const ArrowRightIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+    </svg>
+);
 
-export const getBankIcon = (bankName: string) => {
-    const lowerBankName = bankName.toLowerCase();
-    if (lowerBankName.includes('chase')) return bankIconMap['chase'];
-    if (lowerBankName.includes('america')) return bankIconMap['america'];
-    if (lowerBankName.includes('wells fargo')) return bankIconMap['wells'];
-    return bankIconMap['default'];
-};
-// FIX: Add the missing StarIcon component.
+export const TrophyIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3a2 2 0 012-2h10a2 2 0 012 2v2a2 2 0 01-2 2H7a2 2 0 01-2-2V3zM3 7h18M9 7v10m6-10v10m-3 0h0M9 21h6m-6 0a3 3 0 01-3-3V11a3 3 0 013-3h6a3 3 0 013 3v7a3 3 0 01-3 3m-6 0h6" />
+    </svg>
+);
+
 export const StarIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
     </svg>
 );
-// --- Start of newly added icons for Welcome.tsx ---
+
+export const ArrowsRightLeftIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h18m-4.5-9L21 12m0 0l-4.5 4.5M21 12H3" />
+    </svg>
+);
+
+export const CubeTransparentIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M12 7.5l-2-1-2 1m4-2l2-1 2 1M6 10.5l-2-1 2-1M6 10.5v2.5m6 2.5l2-1 2 1m-4 2v-2.5m6-5l2-1-2-1M18 10.5v2.5" />
+    </svg>
+);
+
+export const SparklesIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M19 3v4M17 5h4M14 11l-1.5 1.5L11 14l-1.5-1.5L8 11l1.5-1.5L11 8l1.5 1.5L14 11zM19 19v-4M21 19h-4" />
+    </svg>
+);
+
+export const CertificateIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944a11.955 11.955 0 019-4.944c3.924 0 7.423 1.983 9.444 4.944a12.02 12.02 0 00-3.04-12.336z" />
+  </svg>
+);
+
+export const AirplaneTicketIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-1.5h5.25m-5.25 0h3m-3 0h-3m0 0h1.5m9 1.5-3-3m0 0-3 3m3-3v-1.5m3 1.5v-1.5m3 0a3 3 0 10-6 0v3a3 3 0 006 0v-3z" />
+    </svg>
+);
+
+export const ArrowLongRightIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
+    </svg>
+);
+
+export const FireIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.25.75a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0V.75zM9.75.75a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0V.75zM12 4.5a.75.75 0 00-.75.75v1.5a.75.75 0 001.5 0v-1.5A.75.75 0 0012 4.5zM12 11.25a3.375 3.375 0 00-3.375 3.375 3.375 3.375 0 003.375 3.375 3.375 3.375 0 003.375-3.375 3.375 3.375 0 00-3.375-3.375zM5.21 5.21A8.25 8.25 0 003 11.25c0 5.13 4.17 9.3 9.3 9.3s9.3-4.17 9.3-9.3A8.25 8.25 0 0018.79 5.21 8.25 8.25 0 0012 3a8.25 8.25 0 00-6.79 2.21z" />
+    </svg>
+);
+
+export const WaterDropIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75c-3.75-2.25-6-5.25-6-9C6 6.336 8.686 3.75 12 3.75s6 2.586 6 6c0 3.75-2.25 6.75-6 9z" />
+    </svg>
+);
+
+export const WrenchScrewdriverIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.664 1.208-.766M11.42 15.17l-4.636 4.636a2.121 2.121 0 01-3 3L3 17.25a2.121 2.121 0 013-3l4.636-4.636m0 0l2.496-3.03c.317-.384.74-.664 1.208-.766m-1.208.766L9.153 5.25a2.121 2.121 0 00-3-3L3 5.25a2.121 2.121 0 003 3l4.636 4.636" />
+    </svg>
+);
+
+export const UsersIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.14-2.72a3 3 0 00-4.682 2.72 9.094 9.094 0 003.741.479m7.14-2.72a3 3 0 01-4.682-2.72 9.094 9.094 0 013.741-.479m-7.14 2.72a3 3 0 01-4.682 2.72 9.094 9.094 0 013.741-.479M12 12a3 3 0 11-6 0 3 3 0 016 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+);
+
+
+{/* FIX: Added all missing icon components below to resolve multiple import errors. */}
 export const LicensedPartnerIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944a11.955 11.955 0 019-4.944c3.924 0 7.423 1.983 9.444 4.944a12.02 12.02 0 00-3.04-12.336z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.6-3.751A11.959 11.959 0 0112 2.75c-2.176 0-4.205.6-5.902 1.664z" />
     </svg>
 );
 export const DataEncryptionIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
     </svg>
 );
 export const ComplianceIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12.75c0 4.142-3.358 7.5-7.5 7.5s-7.5-3.358-7.5-7.5c0-4.142 3.358-7.5 7.5-7.5 1.637 0 3.16.524 4.417 1.413" />
     </svg>
 );
 export const FundsProtectedIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
     </svg>
 );
 export const PlaidLogoIcon = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg"><path d="M46 23c0 12.703-10.297 23-23 23S0 35.703 0 23 10.297 0 23 0s23 10.297 23 23Z" fill="#000"/><path d="M23 41.25c-1.125 0-2.25-.094-3.375-.188a18.156 18.156 0 0 1-10.594-5.25c-1.406-1.406-2.625-2.906-3.656-4.594a18.234 18.234 0 0 1-2.156-6.468c-.188-1.5-.281-3-.281-4.5s.094-3 .281-4.5a18.156 18.156 0 0 1 5.812-11.063c1.406-1.406 2.906-2.531 4.594-3.468a18.156 18.156 0 0 1 6.469-2.063c1.5-.188 3-.281 4.5-.281s3 .094 4.5.281a18.156 18.156 0 0 1 11.063 5.72c1.406 1.405 2.531 2.905 3.469 4.593a18.156 18.156 0 0 1 2.063 6.468c.188 1.5.281 3 .281 4.5s-.094 3-.281 4.5a18.156 18.156 0 0 1-5.72 11.063c-1.405 1.406-2.905 2.625-4.593 3.656a18.156 18.156 0 0 1-6.468 2.157c-1.5.187-3 .28-4.5.28Z" fill="url(#a)"/><defs><linearGradient id="a" x1="4.75" x2="41.25" y1="4.75" y2="41.25" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+    <svg className={className} viewBox="0 0 128 49" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24.4 24.5a24.4 24.4 0 11-13 21.2 24.4 24.4 0 0113-21.2zM0 24.5a24.4 24.4 0 1013-21.2A24.4 24.4 0 000 24.5z" fill="currentColor" /><path d="M50.6 37.8h-7.7V11.2h7.7v26.6zM69.8 37.8h-7.7V11.2h7.7v26.6zM69.8 24.5a7.7 7.7 0 10-15.4 0 7.7 7.7 0 0015.4 0zM83.8 37.8V11.2h7.7v18.9c0 4.6 3.4 7.7 7.7 7.7s7.7-3.1 7.7-7.7V11.2h7.7v18.9c0 9-7 16.4-15.4 16.4s-15.4-7.3-15.4-16.4zM128 37.8h-7.7V11.2H128v26.6z" fill="currentColor" /></svg>
 );
 export const FdicInsuredIcon = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h100v100H0z" fill="#000"/><text x="50" y="60" fill="#fff" text-anchor="middle" style={{fontFamily: 'serif', fontSize: '40px', fontWeight: 'bold'}}>FDIC</text></svg>
+    <svg className={className} viewBox="0 0 100 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="50" fill="currentColor"/>
+        <text x="50" y="30" fontFamily="Arial, sans-serif" fontSize="16" fontWeight="bold" fill="white" textAnchor="middle">FDIC</text>
+    </svg>
 );
 export const PciDssIcon = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h100v100H0z" fill="#002f6c"/><text x="50" y="60" fill="#fff" text-anchor="middle" style={{fontFamily: 'sans-serif', fontSize: '30px', fontWeight: 'bold'}}>PCI DSS</text></svg>
+    <svg className={className} viewBox="0 0 100 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="50" fill="currentColor"/>
+        <text x="50" y="30" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="bold" fill="white" textAnchor="middle">PCI DSS</text>
+    </svg>
 );
 export const Soc2Icon = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h100v100H0z" fill="#fff" stroke="#000" stroke-width="2"/><text x="50" y="60" fill="#000" text-anchor="middle" style={{fontFamily: 'sans-serif', fontSize: '40px', fontWeight: 'bold'}}>SOC 2</text></svg>
+    <svg className={className} viewBox="0 0 100 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="50" fill="currentColor"/>
+        <text x="50" y="30" fontFamily="Arial, sans-serif" fontSize="16" fontWeight="bold" fill="white" textAnchor="middle">SOC 2</text>
+    </svg>
 );
 export const LightningBoltIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
 );
 export const ServerIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 00-.12-1.03l-2.268-9.64a3.375 3.375 0 00-3.285-2.602H7.923a3.375 3.375 0 00-3.285 2.602l-2.268 9.64a4.5 4.5 0 00-.12 1.03v.228m19.5 0a3 3 0 01-3 3H5.25a3 3 0 01-3-3m19.5 0a3 3 0 00-3-3H5.25a3 3 0 00-3 3m16.5 0h.008v.008h-.008v-.008zm-3 0h.008v.008h-.008v-.008z" />
+    </svg>
+);
+export const XSocialIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+);
+export const LinkedInIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+    </svg>
+);
+export const InstagramIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
     </svg>
 );
 export const EnvelopeIcon = ({ className }: { className?: string }) => (
@@ -455,100 +488,132 @@ export const EnvelopeIcon = ({ className }: { className?: string }) => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
     </svg>
 );
-export const FaceIdIcon = ({ className }: { className?: string }) => (
+export const PlusCircleIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c.058 0 .117.002.175.005a3.999 3.999 0 014.33 4.495A4 4 0 118.5 11.5a1 1 0 012 0 2 2 0 104 0c0-1.103-.897-2-2-2h-1a1 1 0 01-1-1 3 3 0 013-3 2 2 0 100-4 4 4 0 00-4 4 1 1 0 11-2 0 6 6 0 016-6 4 4 0 110 8 1 1 0 01-1 1h-1z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+export const AppleWalletIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm-1 14H5c-.55 0-1-.45-1-1v-4h16v4c0 .55-.45 1-1 1zm1-10H4V6c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v2z" />
+    </svg>
+);
+export const VisaIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 12" fill="none" role="img" aria-labelledby="pi-visa">
+        <path d="M25.2 7.3L23.1 0h2.2l1.1 4.7c.2.8.3 1.3.4 1.6.1-.3.2-.8.4-1.6L28.3 0h2.2L28.4 7.3H25.2zM38 3.6c0-1.9-1.2-2.7-3.1-2.7-1.5 0-2.6.5-2.6 1.3 0 .5.6.8 1.1 1.1l.6.3c.9.4 1.2.7 1.2 1.3 0 .9-1.1 1.4-2.3 1.4-1.6 0-2.5-.5-2.5-1.5h-2.1c0 2 1.4 2.9 3.6 2.9 1.9 0 3.3-.6 3.3-2.4 0-.8-.5-1.3-1.1-1.6l-.7-.3c-.7-.4-1-.7-1-1.2 0-.5.7-.9 1.6-.9 1 0 1.6.3 1.7 1h2.1zM19.1 7.3l1.4-7.3h2.2L21.4 7.3h-2.3zM15.1 0l-2.7 7.3h2.3l.4-1.3h2.3l.2 1.3h2.1L18.4 0h-3.3zm.6 4.7l.8-2.3.8 2.3h-1.6zM.1 0l2.7 7.3h1.8L1.9.1.1 0z" fill="#142688" />
+        <path d="M5.5 0L3.1 7.3h2.2c.4 0 .8-.2 1-.5.7-.7.9-1.7.9-2.7 0-2.3-1.2-3.1-2.7-3.1H5.5zm1 1.3c.7 0 1.1.4 1.1 1.8 0 .8-.2 1.4-.6 1.7-.2.2-.4.3-.6.3H6l1-3.8z" fill="#142688" />
+    </svg>
+);
+export const MastercardIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-labelledby="pi-mastercard">
+        <circle cx="7" cy="12" r="7" fill="#EA001B" />
+        <circle cx="17" cy="12" r="7" fill="#F79E1B" />
+        <path d="M12 12a7 7 0 01-5 6.7A7 7 0 0012 19a7 7 0 005-6.7A7 7 0 0112 12z" fill="#FF5F00" />
+    </svg>
+);
+export const HomeIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+);
+export const PiggyBankIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12zM12 10.5h.008v.008H12v-.008z" />
+    </svg>
+);
+export const BuildingOfficeIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6h1.5m-1.5 3h1.5m-1.5 3h1.5M6.75 21v-2.25a2.25 2.25 0 012.25-2.25h6a2.25 2.25 0 012.25 2.25V21" />
     </svg>
 );
 export const WifiIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13a7 7 0 0114 0" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10a11 11 0 0118 0" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 7a15 15 0 0122 0" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.556A5.5 5.5 0 0112 15c1.472 0 2.82.53 3.889 1.556M4.556 13A10.001 10.001 0 0112 9c3.089 0 5.842 1.385 7.444 3.667M12 19h.01" />
     </svg>
 );
 export const TvIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v2m6-2v2m-6-6h6M3 3h18a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 20.25h12m-7.5-3.75v3.75m-3.75 0h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v7.5a2.25 2.25 0 002.25 2.25z" />
     </svg>
 );
 export const SatelliteDishIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 3.75a18.75 18.75 0 0116.5 0M4.5 9.75a15 15 0 0115 0M6 15.75a10.5 10.5 0 0112 0m-9.75 4.5h7.5" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.136 11.962a8.25 8.25 0 0111.664 0m-16.262 3.076a11.25 11.25 0 0115.902 0M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
-export const PiggyBankIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 11.25V13.5m0-6.75V4.5m0 12V18m-7.5-3.75h15M6.375 7.5h11.25m-11.25 9h11.25M3 9a9 9 0 0118 0v6a9 9 0 01-18 0V9z" />
+export const AppleIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.6 12.2c-.1-2.1 1.6-3.4 1.8-3.5-.1-.1-1.3-1.1-3.3-1.1-1.6 0-3.1 1-3.9 1-.8 0-2.1-.9-3.5-.9-1.9 0-3.6 1.1-4.6 2.8-.9 1.7-1.3 4.2-.1 6.3.8 1.9 2.2 3.5 3.9 3.5 1.5 0 2.3-.9 3.8-.9s2.3.9 3.8.9c1.7 0 3-1.5 3.9-3.3.5-1 .7-2.1.1-3.3zm-3.2-6.6c.9-.9 1.4-2.1 1.3-3.2-.1.1-1.2 1-2.4 1.9-.9.8-1.6 2-1.5 3.1 1.2.2 2.2-.1 2.6-1.8z" />
     </svg>
 );
-export const BuildingOfficeIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18h12M6 18V9.75a2.25 2.25 0 012.25-2.25h3.5a2.25 2.25 0 012.25 2.25V18M6 18h.01M9 18h.01M12 18h.01M15 18h.01M18 18h.01M12 6.75V4.5m0 2.25a2.25 2.25 0 01-2.25-2.25V4.5A2.25 2.25 0 0112 2.25v0A2.25 2.25 0 0114.25 4.5v2.25A2.25 2.25 0 0112 9v0A2.25 2.25 0 019.75 6.75v0z" />
+export const UberIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm3.121 13.439H8.879v-2.121h6.242v2.121zm0-4.242H8.879V7.076h6.242v4.121z" />
     </svg>
 );
-export const SparklesIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.25 7.5l.41-1.437a.5.5 0 01.98 0l.41 1.437 1.437.41a.5.5 0 010 .98l-1.437.41-.41 1.437a.5.5 0 01-.98 0l-.41-1.437-1.437-.41a.5.5 0 010-.98l1.437-.41z" />
+export const StarbucksIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="#00704A" viewBox="0 0 24 24">
+        <path d="M12 2c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm0-13.5c-3.033 0-5.5 2.467-5.5 5.5s2.467 5.5 5.5 5.5 5.5-2.467 5.5-5.5-2.467-5.5-5.5-5.5z" />
+        <path d="M12 9.5l-1.5 3 1.5 3 1.5-3-1.5-3z" />
     </svg>
 );
-export const ComputerDesktopIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+export const CalendarDaysIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M-4.5 12h2.25" />
     </svg>
 );
-export const MenuIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+export const CheckBadgeIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
-export const XIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-);
-
-export const CubeTransparentIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M12 17.5v-2.5m2-1l2-1m-2 1l-2-1m6-3l-4 2.5l-4-2.5l4-2.5l4 2.5zM12 2.5L8 5l4 2.5L16 5l-4-2.5zM4 9.5l4 2.5l4-2.5l-4-2.5L4 9.5z" />
-    </svg>
-);
-
-export const AppleWalletIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 7V9.5C20 10.88 18.88 12 17.5 12H6.5C5.12 12 4 10.88 4 9.5V7C4 5.62 5.12 4.5 6.5 4.5H17.5C18.88 4.5 20 5.62 20 7Z" fill="#888"/>
-        <path d="M17.5 19.5H6.5C5.12 19.5 4 18.38 4 17V13C4 12.45 4.45 12 5 12H19C19.55 12 20 12.45 20 13V17C20 18.38 18.88 19.5 17.5 19.5Z" fill="#555"/>
-        <path d="M20 9.5V11.25C20 11.66 19.66 12 19.25 12H4.75C4.34 12 4 11.66 4 11.25V9.5C4 8.12 5.12 7 6.5 7H17.5C18.88 7 20 8.12 20 9.5Z" fill="#AAA"/>
-        <circle cx="17.5" cy="16" r="1.5" fill="white"/>
-    </svg>
-);
-
-export const XSocialIcon = ({ className }: { className?: string }) => (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-);
-
-export const LinkedInIcon = ({ className }: { className?: string }) => (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-    </svg>
-);
-
-export const InstagramIcon = ({ className }: { className?: string }) => (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z" />
-    </svg>
-);
-
-export const CertificateIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-    </svg>
-);
-
 export const ChatBubbleLeftRightIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193l-3.72 3.72a.75.75 0 01-1.06 0l-3.72-3.72C9.347 18.602 8.5 17.636 8.5 16.5v-4.286c0-.97 0.616-1.813 1.5-2.097m6.75-6.115a.75.75 0 10-1.5 0v3.385a.75.75 0 101.5 0V2.396zm-4.5 0a.75.75 0 10-1.5 0v3.385a.75.75 0 101.5 0V2.396zM3.75 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193l-3.72 3.72a.75.75 0 01-1.06 0l-3.72-3.72C-1.653 18.602-2.5 17.636-2.5 16.5v-4.286c0-.97.616-1.813 1.5-2.097" />
     </svg>
+);
+
+
+// --- Bank Logos ---
+const genericBankIcon = BankIcon; // Fallback
+const ChaseIcon = ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9h4v2h-4v-2zm-2 4h8v-2h-8v2z" fill="#005eb8"/></svg>
+);
+// NOTE: These are simplified/mock logos for demonstration purposes.
+const BofAIcon = ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" clipRule="evenodd" d="M3 3h18v18H3V3zm2 2v14h4V5H5zm6 0v14h2V5h-2zm4 0v14h4V5h-4z" fill="#e31837"/></svg>
+);
+const WellsFargoIcon = ({ className }: { className?: string }) => (
+   <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.236L19.021 8 12 11.764 4.979 8 12 4.236zM3.5 8.52v7.96l8 4.02v-7.98l-8-4z" fill="#D71E05"/></svg>
+);
+const BarclaysIcon = ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9h4v2h-4v-2zm-2 4h8v-2h-8v2z" fill="#00AEEF"/></svg>
+);
+
+const bankLogoMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
+    'Chase Bank': ChaseIcon,
+    'Bank of America': BofAIcon,
+    'Wells Fargo': WellsFargoIcon,
+    'Barclays': BarclaysIcon,
+    'Card Deposit': CreditCardIcon,
+};
+
+export const getBankIcon = (bankName: string): React.ComponentType<{ className?: string }> => {
+    for (const key in bankLogoMap) {
+        if (bankName.includes(key)) {
+            return bankLogoMap[key];
+        }
+    }
+    return genericBankIcon;
+};
+
+// Crypto Icons
+export const BtcIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="#F7931A" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.59 13.61c.42.27.7.72.7 1.22 0 .85-.69 1.54-1.54 1.54h-1.01v-1.2h1.01c.21 0 .38-.17.38-.38s-.17-.38-.38-.38h-1.01v-1.1h1.01c.21 0 .38-.17.38-.38s-.17-.38-.38-.38h-1.01v-1.1h1.01c.21 0 .38-.17.38-.38s-.17-.38-.38-.38h-1.84V9.89h1.84c.85 0 1.54.69 1.54 1.54 0 .5-.28.95-.7 1.22l.85 2.96h-1.2l-.74-2.59zM9.46 9.89h1.84v6.98H9.46V9.89zm.77-1.39h.3v.3h-.3v-.3z"/></svg>
+);
+export const EthIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l-6.5 10 6.5 10 6.5-10L12 2z" fill="#627EEA"/><path d="M12 2v10l6.5-10L12 2z" fill="#4559A9"/><path d="M5.5 12l6.5 10V12L5.5 12z" fill="#627EEA"/><path d="M12 12v10l6.5-10H12z" fill="#4559A9"/><path d="M5.5 12l6.5 3.5 6.5-3.5-6.5-3.5L5.5 12z" fill="#C0D1F7"/><path d="M12 15.5V12l6.5.5-6.5 3z" fill="#AABCF2"/></svg>
+);
+export const ApxIcon = ({ className }: { className?: string }) => ( // A stylized version of ApexBankLogo
+  <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="url(#apx_grad)"/><path d="M12 6l-5 4v6l5 4 5-4V10l-5-4z" fill="white" fillOpacity="0.8"/><defs><linearGradient id="apx_grad" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse"><stop stopColor="#0052FF"/><stop offset="1" stopColor="#003199"/></linearGradient></defs></svg>
 );

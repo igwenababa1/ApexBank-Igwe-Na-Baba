@@ -1,7 +1,7 @@
 // FIX: Import React to make React types like `ComponentType` available in this file.
 import React from 'react';
 
-export type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform' | 'tasks';
+export type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform' | 'tasks' | 'flights' | 'utilities';
 
 export enum TransactionStatus {
   SUBMITTED = 'Submitted',
@@ -327,4 +327,59 @@ export interface Task {
   text: string;
   completed: boolean;
   dueDate?: Date;
+}
+
+// Flight Booking
+export interface Airport {
+  code: string;
+  name: string;
+  city: string;
+  country: string;
+}
+
+export interface Flight {
+  id: string;
+  airline: string;
+  airlineLogo: string;
+  flightNumber: string;
+  from: Airport;
+  to: Airport;
+  departureTime: Date;
+  arrivalTime: Date;
+  duration: string; // e.g., "8h 30m"
+  price: number;
+  stops: number;
+}
+
+export interface FlightBooking {
+    id: string;
+    flight: Flight;
+    passengers: number;
+    totalPrice: number;
+    bookingDate: Date;
+    status: 'Confirmed' | 'Pending' | 'Cancelled';
+}
+
+// Utilities
+export enum UtilityType {
+    ELECTRICITY = 'Electricity',
+    WATER = 'Water',
+    GAS = 'Gas',
+    INTERNET = 'Internet',
+}
+
+export interface UtilityBiller {
+    id: string;
+    name: string;
+    type: UtilityType;
+    icon: React.ComponentType<{ className?: string }>;
+    accountNumber: string; // user's account number with the biller
+}
+
+export interface UtilityBill {
+    id: string;
+    billerId: string;
+    amount: number;
+    dueDate: Date;
+    isPaid: boolean;
 }

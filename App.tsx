@@ -3,8 +3,8 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
 import { Recipients } from './components/Recipients';
-import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, View, Task } from './types';
-import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARDS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE, INITIAL_PLATFORM_SETTINGS, THEME_COLORS, INITIAL_TASKS } from './constants';
+import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, View, Task, FlightBooking, UtilityBill, UtilityBiller } from './types';
+import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARDS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE, INITIAL_PLATFORM_SETTINGS, THEME_COLORS, INITIAL_TASKS, INITIAL_FLIGHT_BOOKINGS, INITIAL_UTILITY_BILLS, UTILITY_BILLERS } from './constants';
 import { Welcome } from './components/Welcome';
 import { ProfileSignIn } from './components/ProfileSignIn';
 import { ActivityLog } from './components/ActivityLog';
@@ -22,6 +22,8 @@ import { PlatformFeatures } from './components/PlatformFeatures';
 import { DynamicIslandSimulator } from './components/DynamicIslandSimulator';
 import { BankingChat } from './components/BankingChat';
 import { Tasks } from './components/Tasks';
+import { Flights } from './components/Flights';
+import { Utilities } from './components/Utilities';
 import {
   sendTransactionalEmail,
   generateTransactionReceiptEmail,
@@ -42,6 +44,7 @@ import { getInsuranceProductDetails } from './services/geminiService';
 import { DevicePhoneMobileIcon, GlobeAltIcon, ShieldCheckIcon, SpinnerIcon, InfoIcon, CheckCircleIcon } from './components/Icons';
 import { OpeningSequence } from './components/OpeningSequence';
 import { LoggingOut } from './components/LoggingOut';
+import { IntroSequence } from './components/IntroSequence';
 
 
 const InsuranceProductCard: React.FC<{ product: InsuranceProduct }> = ({ product }) => {
@@ -155,7 +158,7 @@ const Insurance: React.FC = () => {
 };
 
 
-type AuthStatus = 'initializing' | 'loggedOut' | 'profileSignIn' | 'loggedIn';
+type AuthStatus = 'initializing' | 'intro' | 'loggedOut' | 'profileSignIn' | 'loggedIn';
 
 const INACTIVITY_WARNING_TIMEOUT = 9 * 60 * 1000; // 9 minutes
 const INACTIVITY_MODAL_COUNTDOWN = 60; // 60 seconds
@@ -186,6 +189,9 @@ function App() {
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>(INITIAL_PLATFORM_SETTINGS);
   const [trustedDevices, setTrustedDevices] = useState<TrustedDevice[]>(INITIAL_TRUSTED_DEVICES);
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [flightBookings, setFlightBookings] = useState<FlightBooking[]>(INITIAL_FLIGHT_BOOKINGS);
+  const [utilityBills, setUtilityBills] = useState<UtilityBill[]>(INITIAL_UTILITY_BILLS);
+  const utilityBillers = UTILITY_BILLERS; // This is constant for now
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -748,6 +754,85 @@ function App() {
     setTasks(prev => prev.filter(task => task.id !== taskId));
     addNotification(NotificationType.TASK, 'Task Deleted', 'A task has been removed from your list.', 'tasks');
   };
+  
+  const handleBookFlight = (booking: Omit<FlightBooking, 'id' | 'bookingDate' | 'status'>, sourceAccountId: string): boolean => {
+    const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
+    if (!sourceAccount || sourceAccount.balance < booking.totalPrice) {
+      addNotification(NotificationType.TRANSACTION, 'Booking Failed', 'Insufficient funds for this flight booking.', 'flights');
+      return false;
+    }
+    
+    // Deduct amount
+    setAccounts(prev => prev.map(acc => acc.id === sourceAccountId ? { ...acc, balance: acc.balance - booking.totalPrice } : acc));
+    
+    // Create booking record
+    const newBooking: FlightBooking = {
+      ...booking,
+      id: `book_${Date.now()}`,
+      bookingDate: new Date(),
+      status: 'Confirmed'
+    };
+    setFlightBookings(prev => [newBooking, ...prev]);
+
+    // Create transaction record
+    const newTransaction: Transaction = {
+      id: `txn_flight_${Date.now()}`,
+      accountId: sourceAccountId,
+      recipient: { ...SELF_RECIPIENT, fullName: booking.flight.airline, bankName: 'Flight Booking' },
+      sendAmount: booking.totalPrice,
+      receiveAmount: booking.totalPrice,
+      fee: 0,
+      exchangeRate: 1,
+      status: TransactionStatus.FUNDS_ARRIVED,
+      estimatedArrival: new Date(),
+      statusTimestamps: { [TransactionStatus.SUBMITTED]: new Date(), [TransactionStatus.FUNDS_ARRIVED]: new Date() },
+      description: `Flight ${booking.flight.flightNumber} to ${booking.flight.to.code}`,
+      type: 'debit',
+      purpose: 'Travel',
+    };
+    setTransactions(prev => [newTransaction, ...prev]);
+
+    addNotification(NotificationType.TRAVEL, 'Flight Booked!', `Your flight to ${booking.flight.to.city} is confirmed.`, 'flights');
+    return true;
+  };
+
+  const handlePayUtility = (billId: string, sourceAccountId: string): boolean => {
+    const bill = utilityBills.find(b => b.id === billId);
+    const biller = utilityBillers.find(b => b.id === bill?.billerId);
+    const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
+
+    if (!bill || !biller || !sourceAccount || sourceAccount.balance < bill.amount) {
+      addNotification(NotificationType.TRANSACTION, 'Payment Failed', 'Insufficient funds to pay this bill.', 'utilities');
+      return false;
+    }
+
+    // Deduct amount
+    setAccounts(prev => prev.map(acc => acc.id === sourceAccountId ? { ...acc, balance: acc.balance - bill.amount } : acc));
+    
+    // Mark as paid
+    setUtilityBills(prev => prev.map(b => b.id === billId ? { ...b, isPaid: true } : b));
+    
+    // Create transaction record
+     const newTransaction: Transaction = {
+      id: `txn_util_${Date.now()}`,
+      accountId: sourceAccountId,
+      recipient: { ...SELF_RECIPIENT, fullName: biller.name, bankName: 'Utility Payment' },
+      sendAmount: bill.amount,
+      receiveAmount: bill.amount,
+      fee: 0,
+      exchangeRate: 1,
+      status: TransactionStatus.FUNDS_ARRIVED,
+      estimatedArrival: new Date(),
+      statusTimestamps: { [TransactionStatus.SUBMITTED]: new Date(), [TransactionStatus.FUNDS_ARRIVED]: new Date() },
+      description: `Bill payment to ${biller.name}`,
+      type: 'debit',
+      purpose: 'Bill Payment',
+    };
+    setTransactions(prev => [newTransaction, ...prev]);
+    
+    addNotification(NotificationType.TRANSACTION, 'Bill Paid', `Your payment to ${biller.name} was successful.`, 'utilities');
+    return true;
+  };
 
 
   useEffect(() => {
@@ -782,128 +867,113 @@ function App() {
   const renderContent = () => {
     switch (authStatus) {
       case 'initializing':
-        // FIX: Explicitly pass `false` to `handleCredentialsSuccess` to satisfy the type checker, which seems unable to infer the optional parameter.
-        // FIX: Provide argument to handleCredentialsSuccess to fix "Expected 1 arguments, but got 0" error.
-        return <OpeningSequence onComplete={() => handleCredentialsSuccess(false)} />;
+        return <OpeningSequence onComplete={() => setAuthStatus('intro')} />;
+      case 'intro':
+        return <IntroSequence onComplete={() => setAuthStatus('loggedOut')} />;
       case 'loggedOut':
         return <Welcome onLogin={handleCredentialsSuccess} />;
       case 'profileSignIn':
         return <ProfileSignIn user={USER_PROFILE} onEnterDashboard={handleEnterDashboard} />;
       case 'loggedIn':
-        const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
-        let viewContent;
-        switch (activeView) {
-          case 'dashboard':
-            viewContent = <Dashboard 
-              accounts={accounts} 
-              transactions={transactions} 
-              setActiveView={setActiveView}
-              recipients={recipients}
-              createTransaction={createTransaction}
-              cryptoPortfolioValue={cryptoPortfolioValue}
-              travelPlans={travelPlans}
-            />;
-            break;
-          case 'send':
-            viewContent = <SendMoneyFlow
-              recipients={recipients} 
-              accounts={accounts} 
-              createTransaction={createTransaction}
-              transactions={transactions}
-              securitySettings={securitySettings}
-              hapticsEnabled={platformSettings.hapticsEnabled}
-              onAuthorizeTransaction={handleAuthorizeTransaction}
-            />;
-            break;
-          case 'recipients':
-            viewContent = <Recipients recipients={recipients} addRecipient={addRecipient} />;
-            break;
-          case 'history':
-            viewContent = <ActivityLog transactions={transactions} />;
-            break;
-          case 'security':
-            viewContent = <Security 
-              transferLimits={transferLimits} 
-              onUpdateLimits={setTransferLimits} 
-              verificationLevel={verificationLevel}
-              onVerificationComplete={setVerificationLevel}
-              securitySettings={securitySettings}
-              onUpdateSecuritySettings={(s) => setSecuritySettings(prev => ({...prev, ...s}))}
-              trustedDevices={trustedDevices}
-              onRevokeDevice={(id) => setTrustedDevices(prev => prev.filter(d => d.id !== id))}
-            />;
-            break;
-          case 'cards':
-            viewContent = <CardManagement
-                cards={cards}
-                transactions={INITIAL_CARD_TRANSACTIONS}
-                onToggleFreeze={handleToggleFreeze}
-                onAddCard={addCard}
-                accountBalance={checkingAccount?.balance || 0}
-                onAddFunds={addFunds}
-            />;
-            break;
-          case 'insurance':
-            viewContent = <Insurance />;
-            break;
-          case 'loans':
-            viewContent = <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification} />;
-            break;
-          case 'support':
-            viewContent = <Support />;
-            break;
-          case 'accounts':
-            viewContent = <Accounts 
-              accounts={accounts} 
-              transactions={transactions} 
-              verificationLevel={verificationLevel} 
-              onUpdateAccountNickname={handleUpdateAccountNickname}
-            />;
-            break;
-          case 'crypto':
-            viewContent = <CryptoDashboard 
-              cryptoAssets={cryptoAssets}
-              setCryptoAssets={setCryptoAssets}
-              holdings={cryptoHoldings}
-              checkingAccount={checkingAccount}
-              onBuy={onBuyCrypto}
-              onSell={onSellCrypto}
-            />;
-            break;
-          case 'services':
-            viewContent = <ServicesDashboard 
-              subscriptions={subscriptions}
-              appleCardDetails={appleCardDetails}
-              appleCardTransactions={appleCardTransactions}
-              onPaySubscription={handlePaySubscription}
-              onUpdateSpendingLimits={handleUpdateSpendingLimits}
-              onUpdateTransactionCategory={handleUpdateTransactionCategory}
-            />;
-            break;
-          case 'checkin':
-            viewContent = <TravelCheckIn travelPlans={travelPlans} addTravelPlan={addTravelPlan} />;
-            break;
-          case 'platform':
-            viewContent = <PlatformFeatures settings={platformSettings} onUpdateSettings={(s) => setPlatformSettings(prev => ({...prev, ...s}))} />;
-            break;
-          case 'tasks':
-            viewContent = <Tasks tasks={tasks} addTask={addTask} toggleTask={toggleTask} deleteTask={deleteTask} />;
-            break;
-          default:
-            viewContent = <Dashboard 
-              accounts={accounts} 
-              transactions={transactions} 
-              setActiveView={setActiveView}
-              recipients={recipients}
-              createTransaction={createTransaction}
-              cryptoPortfolioValue={cryptoPortfolioValue}
-              travelPlans={travelPlans}
-            />;
+        const renderActiveView = () => {
+          switch (activeView) {
+            case 'dashboard':
+              return <Dashboard 
+                        accounts={accounts} 
+                        transactions={transactions} 
+                        setActiveView={setActiveView} 
+                        recipients={recipients}
+                        createTransaction={createTransaction}
+                        cryptoPortfolioValue={cryptoPortfolioValue}
+                        travelPlans={travelPlans}
+                     />;
+            case 'send':
+              return <SendMoneyFlow 
+                        recipients={recipients}
+                        accounts={accounts}
+                        createTransaction={createTransaction}
+                        transactions={transactions}
+                        securitySettings={securitySettings}
+                        hapticsEnabled={platformSettings.hapticsEnabled}
+                        onAuthorizeTransaction={handleAuthorizeTransaction}
+                     />;
+            case 'recipients':
+              return <Recipients recipients={recipients} addRecipient={addRecipient} />;
+            case 'history':
+              return <ActivityLog transactions={transactions} />;
+            case 'security':
+              return <Security 
+                        transferLimits={transferLimits} 
+                        onUpdateLimits={setTransferLimits}
+                        verificationLevel={verificationLevel}
+                        onVerificationComplete={setVerificationLevel}
+                        securitySettings={securitySettings}
+                        onUpdateSecuritySettings={(settings) => setSecuritySettings(prev => ({...prev, ...settings}))}
+                        trustedDevices={trustedDevices}
+                        onRevokeDevice={(id) => setTrustedDevices(prev => prev.filter(d => d.id !== id))}
+                     />;
+            case 'cards':
+              return <CardManagement 
+                        cards={cards}
+                        transactions={INITIAL_CARD_TRANSACTIONS} /* Using initial for now */
+                        onToggleFreeze={handleToggleFreeze}
+                        onAddCard={addCard}
+                        accountBalance={accounts.find(acc => acc.type === 'Global Checking')?.balance || 0}
+                        onAddFunds={addFunds}
+                     />;
+            case 'insurance':
+                return <Insurance />;
+            case 'loans':
+                return <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification} />;
+            case 'support':
+                return <Support />;
+            case 'accounts':
+                return <Accounts 
+                            accounts={accounts} 
+                            transactions={transactions} 
+                            verificationLevel={verificationLevel}
+                            onUpdateAccountNickname={handleUpdateAccountNickname}
+                       />;
+            case 'crypto':
+              return <CryptoDashboard
+                        cryptoAssets={cryptoAssets}
+                        setCryptoAssets={setCryptoAssets}
+                        holdings={cryptoHoldings}
+                        checkingAccount={accounts.find(acc => acc.type === 'Global Checking')}
+                        onBuy={onBuyCrypto}
+                        onSell={onSellCrypto}
+                     />;
+            case 'services':
+              return <ServicesDashboard 
+                        subscriptions={subscriptions}
+                        appleCardDetails={appleCardDetails}
+                        appleCardTransactions={appleCardTransactions}
+                        onPaySubscription={handlePaySubscription}
+                        onUpdateSpendingLimits={handleUpdateSpendingLimits}
+                        onUpdateTransactionCategory={handleUpdateTransactionCategory}
+                     />;
+            case 'checkin':
+              return <TravelCheckIn travelPlans={travelPlans} addTravelPlan={addTravelPlan} />;
+            case 'platform':
+              return <PlatformFeatures settings={platformSettings} onUpdateSettings={(s) => setPlatformSettings(prev => ({...prev, ...s}))} />;
+            case 'tasks':
+              return <Tasks tasks={tasks} addTask={addTask} toggleTask={toggleTask} deleteTask={deleteTask} />;
+            case 'flights':
+              return <Flights bookings={flightBookings} onBookFlight={handleBookFlight} accounts={accounts} setActiveView={setActiveView} />;
+            case 'utilities':
+              return <Utilities bills={utilityBills} billers={utilityBillers} onPayBill={handlePayUtility} accounts={accounts} setActiveView={setActiveView} />;
+            default:
+              return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
+          }
+        };
+
+        if (isLoggingOut) {
+          return <LoggingOut onComplete={handleFinalizeLogout} />;
         }
 
         return (
-          <div className="bg-slate-300 min-h-screen">
-            <Header
+          <div className="min-h-screen bg-slate-200">
+            <Header 
               activeView={activeView}
               setActiveView={setActiveView}
               onLogout={handleInitiateLogout}
@@ -911,27 +981,19 @@ function App() {
               onMarkNotificationsAsRead={markNotificationsAsRead}
               onNotificationClick={handleNotificationClick}
             />
-            <DynamicIslandSimulator transaction={inProgressTransaction || null} />
-            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-              {viewContent}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {renderActiveView()}
             </main>
-             {isLogoutModalOpen && <LogoutConfirmationModal onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleConfirmLogout} />}
-             {showInactivityModal && <InactivityModal onLogout={handleConfirmLogout} onStayLoggedIn={resetInactivityTimer} countdownStart={INACTIVITY_MODAL_COUNTDOWN} />}
-             <BankingChat />
+            <DynamicIslandSimulator transaction={inProgressTransaction || null} />
+            <BankingChat />
+            {isLogoutModalOpen && <LogoutConfirmationModal onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleConfirmLogout} />}
+            {showInactivityModal && <InactivityModal onStayLoggedIn={resetInactivityTimer} onLogout={handleConfirmLogout} countdownStart={INACTIVITY_MODAL_COUNTDOWN} />}
           </div>
         );
-      default:
-        return null;
     }
   };
 
-  return (
-    <div className="font-sans antialiased">
-      {renderContent()}
-      {isLoggingOut && <LoggingOut onComplete={handleFinalizeLogout} />}
-    </div>
-  );
+  return renderContent();
 }
 
-// FIX: Add default export for the App component.
 export default App;

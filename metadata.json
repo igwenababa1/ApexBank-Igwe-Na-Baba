@@ -1,6 +1,6 @@
 {
-  "name": "Igwe Na Baba Bank PLC MVP",
-  "description": "A modern, trustworthy fintech web application for seamless international money transfers, featuring a real-time simulation of the transfer journey.",
+  "name": "ApexBank",
+  "description": "A modern, trustworthy fintech web application for seamless international money transfers, featuring a real-time simulation of the transfer journey and a professional, multi-step user introduction.",
   "requestFramePermissions": [
     "camera"
   ]
