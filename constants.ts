@@ -1,4 +1,4 @@
-import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme } from './types';
+import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, Task } from './types';
 import { BtcIcon, EthIcon, ApxIcon } from './components/Icons';
 
 export const SUPPORTED_COUNTRIES: Country[] = [
@@ -440,3 +440,11 @@ export const THEME_COLORS: { [key in PlatformTheme]: { [key: string]: string } }
     '900': '76 29 149',
   }
 };
+
+// --- Task Management Constants ---
+export const INITIAL_TASKS: Task[] = [
+  { id: 'task_1', text: 'Pay Q3 estimated taxes', completed: false, dueDate: new Date(new Date().setDate(new Date().getDate() + 10)) },
+  { id: 'task_2', text: 'Review monthly budget with financial advisor', completed: false, dueDate: new Date(new Date().setDate(new Date().getDate() - 2)) },
+  { id: 'task_3', text: 'Set up recurring transfer for rent', completed: false },
+  { id: 'task_4', text: 'File expense reports for June', completed: true, dueDate: new Date(new Date().setDate(new Date().getDate() - 15)) },
+];

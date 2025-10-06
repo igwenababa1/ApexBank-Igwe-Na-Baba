@@ -3,8 +3,8 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
 import { Recipients } from './components/Recipients';
-import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, View } from './types';
-import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARDS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE, INITIAL_PLATFORM_SETTINGS, THEME_COLORS } from './constants';
+import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, View, Task } from './types';
+import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARDS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE, INITIAL_PLATFORM_SETTINGS, THEME_COLORS, INITIAL_TASKS } from './constants';
 import { Welcome } from './components/Welcome';
 import { ProfileSignIn } from './components/ProfileSignIn';
 import { ActivityLog } from './components/ActivityLog';
@@ -21,6 +21,7 @@ import { TravelCheckIn } from './components/TravelCheckIn';
 import { PlatformFeatures } from './components/PlatformFeatures';
 import { DynamicIslandSimulator } from './components/DynamicIslandSimulator';
 import { BankingChat } from './components/BankingChat';
+import { Tasks } from './components/Tasks';
 import {
   sendTransactionalEmail,
   generateTransactionReceiptEmail,
@@ -182,6 +183,7 @@ function App() {
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>(INITIAL_SECURITY_SETTINGS);
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>(INITIAL_PLATFORM_SETTINGS);
   const [trustedDevices, setTrustedDevices] = useState<TrustedDevice[]>(INITIAL_TRUSTED_DEVICES);
+  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const inactivityTimerRef = React.useRef<number>();
@@ -710,6 +712,34 @@ function App() {
     setActiveView(view);
   };
 
+  const addTask = (text: string, dueDate?: Date) => {
+    const newTask: Task = {
+      id: `task_${Date.now()}`,
+      text,
+      completed: false,
+      dueDate,
+    };
+    setTasks(prev => [newTask, ...prev]);
+    addNotification(NotificationType.TASK, 'Task Added', `New task "${text}" created.`, 'tasks');
+  };
+
+  const toggleTask = (taskId: string) => {
+    setTasks(prev => prev.map(task => {
+        if (task.id === taskId) {
+            if (!task.completed) {
+                addNotification(NotificationType.TASK, 'Task Completed!', `You've completed "${task.text}".`, 'tasks');
+            }
+            return { ...task, completed: !task.completed };
+        }
+        return task;
+    }));
+  };
+
+  const deleteTask = (taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+    addNotification(NotificationType.TASK, 'Task Deleted', 'A task has been removed from your list.', 'tasks');
+  };
+
 
   useEffect(() => {
     handleUpdateTheme(platformSettings.theme);
@@ -842,6 +872,9 @@ function App() {
             break;
           case 'platform':
             viewContent = <PlatformFeatures settings={platformSettings} onUpdateSettings={(s) => setPlatformSettings(prev => ({...prev, ...s}))} />;
+            break;
+          case 'tasks':
+            viewContent = <Tasks tasks={tasks} addTask={addTask} toggleTask={toggleTask} deleteTask={deleteTask} />;
             break;
           default:
             viewContent = <Dashboard 

@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { 
     DashboardIcon, SendIcon, UserGroupIcon, ActivityIcon, CogIcon, CreditCardIcon, 
     LifebuoyIcon, CashIcon, QuestionMarkCircleIcon, WalletIcon, ChartBarIcon, 
-    ShoppingBagIcon, MapPinIcon, XIcon, ApexBankLogo, CubeTransparentIcon
+    ShoppingBagIcon, MapPinIcon, XIcon, ApexBankLogo, CubeTransparentIcon,
+    ClipboardDocumentIcon
 } from './Icons';
 import { View } from '../types';
 
@@ -38,6 +39,7 @@ const menuConfig: {
             { view: 'history', label: 'History', icon: ActivityIcon },
             { view: 'services', label: 'Services', icon: ShoppingBagIcon },
             { view: 'checkin', label: 'Check-In', icon: MapPinIcon },
+            { view: 'tasks', label: 'Tasks', icon: ClipboardDocumentIcon },
         ]
     },
     {

@@ -1,7 +1,7 @@
 // FIX: Import React to make React types like `ComponentType` available in this file.
 import React from 'react';
 
-export type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform';
+export type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform' | 'tasks';
 
 export enum TransactionStatus {
   SUBMITTED = 'Submitted',
@@ -24,6 +24,7 @@ export enum NotificationType {
   CRYPTO = 'crypto',
   SUBSCRIPTION = 'subscription',
   TRAVEL = 'travel',
+  TASK = 'task',
 }
 
 export interface Notification {
@@ -318,4 +319,12 @@ export type PlatformTheme = 'blue' | 'green' | 'purple';
 export interface PlatformSettings {
   hapticsEnabled: boolean;
   theme: PlatformTheme;
+}
+
+// Task Management
+export interface Task {
+  id: string;
+  text: string;
+  completed: boolean;
+  dueDate?: Date;
 }
