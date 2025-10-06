@@ -2,11 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
     ApexBankLogo, LogoutIcon, BellIcon, MenuIcon
 } from './Icons';
-import { Notification } from '../types';
+import { Notification, View } from '../types';
 import { NotificationsPanel } from './NotificationsPanel';
 import { MegaMenu } from './MegaMenu'; // Import the new menu
-
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform';
 
 interface HeaderProps {
   activeView: View;
@@ -14,9 +12,10 @@ interface HeaderProps {
   onLogout: () => void;
   notifications: Notification[];
   onMarkNotificationsAsRead: () => void;
+  onNotificationClick: (view: View) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLogout, notifications, onMarkNotificationsAsRead }) => {
+export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLogout, notifications, onMarkNotificationsAsRead, onNotificationClick }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for the new menu
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -79,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                           </span>
                       )}
                   </button>
-                  {showNotifications && <NotificationsPanel notifications={notifications} onClose={() => setShowNotifications(false)} />}
+                  {showNotifications && <NotificationsPanel notifications={notifications} onClose={() => setShowNotifications(false)} onNotificationClick={onNotificationClick} />}
                </div>
 
                <button

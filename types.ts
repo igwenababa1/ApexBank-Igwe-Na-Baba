@@ -1,6 +1,8 @@
 // FIX: Import React to make React types like `ComponentType` available in this file.
 import React from 'react';
 
+export type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform';
+
 export enum TransactionStatus {
   SUBMITTED = 'Submitted',
   CONVERTING = 'Converting & Sending',
@@ -31,6 +33,7 @@ export interface Notification {
   message: string;
   timestamp: Date;
   read: boolean;
+  linkTo?: View;
 }
 
 export interface Country {
@@ -81,6 +84,7 @@ export interface Transaction {
   description: string;
   type: 'debit' | 'credit';
   purpose?: string;
+  requiresAuth?: boolean;
   chequeDetails?: {
     chequeNumber?: string;
     images: {
@@ -98,6 +102,7 @@ export interface Card {
   fullNumber?: string;
   cvc?: string;
   isFrozen: boolean;
+  network: 'Visa' | 'Mastercard';
 }
 
 export interface CardTransaction {
@@ -179,8 +184,9 @@ export enum AccountType {
 
 export enum VerificationLevel {
   UNVERIFIED = 'Unverified',
-  LEVEL_1 = 'Level 1: Verified',
-  LEVEL_2 = 'Level 2: Verified+',
+  LEVEL_1 = 'Level 1: SSN Verified',
+  LEVEL_2 = 'Level 2: Document Verified',
+  LEVEL_3 = 'Level 3: Liveness Verified',
 }
 
 export interface Account {

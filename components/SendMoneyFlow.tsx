@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Recipient, Transaction, Account, SecuritySettings } from '../types';
-import { FIXED_FEE, EXCHANGE_RATES, TRANSFER_PURPOSES, USER_PIN } from '../constants';
+import { FIXED_FEE, EXCHANGE_RATES, TRANSFER_PURPOSES, USER_PIN, NETWORK_AUTH_CODE } from '../constants';
 import { LiveTransactionView } from './LiveTransactionView';
-import { SpinnerIcon, CheckCircleIcon, ExclamationTriangleIcon, KeypadIcon, BankIcon, CreditCardIcon, WithdrawIcon, FaceIdIcon } from './Icons';
+import { SpinnerIcon, CheckCircleIcon, ExclamationTriangleIcon, KeypadIcon, BankIcon, CreditCardIcon, WithdrawIcon, FaceIdIcon, ShieldCheckIcon } from './Icons';
 import { triggerHaptic } from '../utils/haptics';
 
 interface SendMoneyFlowProps {
@@ -12,6 +12,7 @@ interface SendMoneyFlowProps {
   transactions: Transaction[];
   securitySettings: SecuritySettings;
   hapticsEnabled: boolean;
+  onAuthorizeTransaction: (transactionId: string) => void;
 }
 
 // Stepper component
@@ -55,7 +56,7 @@ const Stepper: React.FC<{ steps: string[], currentStep: number }> = ({ steps, cu
 
 
 // Main Component
-export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accounts, createTransaction, transactions, securitySettings, hapticsEnabled }) => {
+export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accounts, createTransaction, transactions, securitySettings, hapticsEnabled, onAuthorizeTransaction }) => {
   const [step, setStep] = useState(0); // 0: Amount, 1: Authorize, 2: Review, 3: Success
   
   const availableSourceAccounts = accounts.filter(acc => acc.balance > 0);
@@ -64,11 +65,16 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
   const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(recipients.length > 0 ? recipients[0] : null);
   const [sendAmount, setSendAmount] = useState('');
   const [purpose, setPurpose] = useState(TRANSFER_PURPOSES[0]);
+  const [tooltip, setTooltip] = useState({ show: false, message: '' });
+  const tooltipTimeout = useRef<number | null>(null);
 
   // Security State
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authCode, setAuthCode] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
 
   // Transaction State
   const [createdTransaction, setCreatedTransaction] = useState<Transaction | null>(null);
@@ -98,6 +104,36 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
     hapticTrigger();
     setStep(prev => prev - 1);
   }
+  
+  const showTooltip = (message: string, autoHide: boolean = false) => {
+    if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+    setTooltip({ show: true, message });
+    if (autoHide) {
+        tooltipTimeout.current = window.setTimeout(() => {
+            setTooltip({ show: false, message: '' });
+        }, 2500);
+    }
+  };
+
+  const hideTooltip = () => {
+      if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+      setTooltip({ show: false, message: '' });
+  };
+
+  const handleDisabledInteraction = (isClick: boolean) => {
+    let message = '';
+    if (numericSendAmount <= 0) {
+        message = 'Please enter an amount to send.';
+    } else if (isAmountInvalid) {
+        message = 'Insufficient balance for this transaction.';
+    } else if (!selectedRecipient) {
+        message = 'Please select a recipient.';
+    }
+    
+    if (message) {
+        showTooltip(message, isClick); // Auto-hide only on click
+    }
+  };
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,6 +181,24 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
         setCreatedTransaction(newTransaction);
         handleNextStep();
     }
+  };
+  
+  const handleAuthCodeSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!liveTransaction) return;
+
+      setIsAuthorizing(true);
+      setAuthError('');
+      // Simulate network delay
+      setTimeout(() => {
+          if (authCode === NETWORK_AUTH_CODE) {
+              onAuthorizeTransaction(liveTransaction.id);
+          } else {
+              setAuthError('Invalid Authorization Code. Please try again.');
+          }
+          setIsAuthorizing(false);
+          setAuthCode('');
+      }, 1000);
   };
 
   const handleStartOver = () => {
@@ -258,9 +312,24 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
                   </div>
                 </div>
               </div>
-              <button onClick={handleNextStep} disabled={isAmountInvalid || !selectedRecipient} className="w-full py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg disabled:bg-primary-300 transition-all">
-                Continue
-              </button>
+              <div className="relative">
+                <button onClick={handleNextStep} disabled={isAmountInvalid || !selectedRecipient} className="w-full py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg disabled:bg-primary-300 transition-all">
+                  Continue
+                </button>
+                {(isAmountInvalid || !selectedRecipient) && (
+                    <div
+                        className="absolute inset-0 cursor-not-allowed"
+                        onClick={() => handleDisabledInteraction(true)}
+                        onMouseEnter={() => handleDisabledInteraction(false)}
+                        onMouseLeave={hideTooltip}
+                    />
+                )}
+                {tooltip.show && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-sm font-medium text-white bg-slate-800 rounded-md shadow-lg whitespace-nowrap z-10 animate-fade-in-up">
+                        {tooltip.message}
+                    </div>
+                )}
+              </div>
             </div>
           </>
         );
@@ -376,65 +445,58 @@ export const SendMoneyFlow: React.FC<SendMoneyFlowProps> = ({ recipients, accoun
                 </div>
             );
         }
+        
+        const isAwaitingAuth = liveTransaction.status === 'In Transit' && liveTransaction.requiresAuth;
+
         return (
           <div className="text-center p-2">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 shadow-digital-inset">
               <CheckCircleIcon className="w-8 h-8 text-green-600" />
             </div>
             <h2 className="text-2xl font-bold text-slate-800">Transfer in Progress!</h2>
+            <p className="text-slate-600 my-4">You can track its live progress below.</p>
             
-            <div className="bg-slate-200 rounded-lg shadow-digital-inset p-4 my-6 text-left">
-              <div className="grid grid-cols-2 gap-4 items-start border-b border-slate-300 pb-4 mb-4">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">From</p>
-                  <p className="font-bold text-slate-800">{sourceAccount?.nickname || sourceAccount?.type}</p>
-                  <p className="text-sm text-slate-600">Eleanor Vance</p>
-                  <p className="text-sm text-slate-500 font-mono">{sourceAccount?.accountNumber}</p>
-                </div>
-                <div className="space-y-1 text-right">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">To</p>
-                  <p className="font-bold text-slate-800">{liveTransaction.recipient.nickname ? `${liveTransaction.recipient.nickname} (${liveTransaction.recipient.fullName})` : liveTransaction.recipient.fullName}</p>
-                  <p className="text-sm text-slate-600">{liveTransaction.recipient.bankName}</p>
-                  <p className="text-sm text-slate-500 font-mono">{liveTransaction.recipient.accountNumber}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">You sent</span>
-                  <span className="font-semibold text-slate-800 font-mono">{liveTransaction.sendAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Exchange rate</span>
-                  <span className="font-mono text-slate-800">1 USD = {liveTransaction.exchangeRate.toFixed(4)} {liveTransaction.recipient.country.currency}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Fee</span>
-                  <span className="font-semibold text-slate-800 font-mono">{liveTransaction.fee.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-                </div>
-                <div className="flex justify-between font-bold border-t border-slate-300 pt-2 mt-2">
-                  <span className="text-slate-700">Total debited</span>
-                  <span className="text-slate-800 font-mono">{(liveTransaction.sendAmount + liveTransaction.fee).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg text-primary bg-primary-50/50 p-2 rounded-md mt-2">
-                  <span>Recipient gets</span>
-                  <span>{liveTransaction.receiveAmount.toLocaleString('en-US', { style: 'currency', currency: liveTransaction.recipient.country.currency })}</span>
-                </div>
-              </div>
-              
-              <div className="text-center mt-4 pt-4 border-t border-slate-300">
-                  <p className="text-xs text-slate-500">Transaction ID</p>
-                  <p className="font-mono text-sm text-slate-600 break-all">{liveTransaction.id}</p>
-              </div>
-            </div>
-
-            <p className="text-slate-600 mb-4">You can track its live progress below.</p>
             <div className="p-4 rounded-lg shadow-digital-inset my-6">
                 <LiveTransactionView transaction={liveTransaction} />
             </div>
-            <button onClick={handleStartOver} className="w-full py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg transition-all">
+
+            {isAwaitingAuth && (
+              <div className="mt-6 p-4 bg-blue-100 text-blue-800 rounded-lg shadow-digital text-left animate-fade-in-up">
+                  <div className="flex items-start space-x-3">
+                      <ShieldCheckIcon className="w-8 h-8 flex-shrink-0 text-blue-500" />
+                      <div>
+                          <h4 className="font-bold">Advanced Authorization Required</h4>
+                          <p className="text-sm mt-1">For your security, this international transfer has been flagged for final authorization. Please enter the 6-digit code sent to your registered authenticator app to release the funds to the recipient's bank.</p>
+                          <form onSubmit={handleAuthCodeSubmit} className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                              <input
+                                  type="text"
+                                  value={authCode}
+                                  onChange={e => setAuthCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                  className="flex-grow bg-white/70 border-blue-300 p-2 text-center text-lg tracking-[.5em] rounded-md shadow-inner focus:ring-2 focus:ring-blue-500"
+                                  maxLength={6}
+                                  placeholder="------"
+                                  disabled={isAuthorizing}
+                              />
+                              <button type="submit" disabled={isAuthorizing || authCode.length !== 6} className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 disabled:bg-blue-300 flex items-center justify-center">
+                                  {isAuthorizing ? <SpinnerIcon className="w-5 h-5"/> : 'Submit Code'}
+                              </button>
+                          </form>
+                          {authError && <p className="text-red-600 text-xs mt-2 text-center">{authError}</p>}
+                      </div>
+                  </div>
+              </div>
+            )}
+            
+            <button onClick={handleStartOver} className="w-full mt-6 py-3 text-white bg-primary rounded-lg font-semibold shadow-md hover:shadow-lg transition-all">
               Send Another Transfer
             </button>
+             <style>{`
+                @keyframes fade-in-up {
+                    0% { opacity: 0; transform: translateY(10px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; }
+            `}</style>
           </div>
         );
       

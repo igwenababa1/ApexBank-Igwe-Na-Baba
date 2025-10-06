@@ -148,6 +148,12 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
     }
   }
 
+  const handleAccountNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/[\W_]/g, ''); // Removes all non-word characters and underscores
+    const formattedValue = rawValue.toUpperCase().replace(/(.{4})/g, '$1 ').trim();
+    setAccountNumber(formattedValue);
+  };
+
   const finalBankName = bankName === 'Other' ? otherBankName : bankName;
   const isFormInvalid = !fullName || !finalBankName || !accountNumber || !swiftBic || !country || Object.values(errors).some(e => e !== null);
 
@@ -226,12 +232,12 @@ export const AddRecipientModal: React.FC<AddRecipientModalProps> = ({ onClose, o
                 </div>
                 <div>
                   <label htmlFor="accountNumber" className="block text-sm font-medium text-slate-700">Account Number / IBAN</label>
-                  <input type="text" id="accountNumber" name="accountNumber" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} onBlur={handleBlur} className={`mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 ${errors.accountNumber ? 'ring-2 ring-red-500' : ''}`} required />
+                  <input type="text" id="accountNumber" name="accountNumber" value={accountNumber} onChange={handleAccountNumberChange} onBlur={handleBlur} className={`mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 font-mono tracking-wider ${errors.accountNumber ? 'ring-2 ring-red-500' : ''}`} required maxLength={42} placeholder="e.g., GB29 NWBK 6016 1331 9268 19"/>
                   {errors.accountNumber && <p className="mt-1 text-sm text-red-600">{errors.accountNumber}</p>}
                 </div>
                 <div>
                   <label htmlFor="swiftBic" className="block text-sm font-medium text-slate-700">SWIFT / BIC Code</label>
-                  <input type="text" id="swiftBic" name="swiftBic" value={swiftBic} onChange={e => setSwiftBic(e.target.value.toUpperCase())} onBlur={handleBlur} className={`mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 ${errors.swiftBic ? 'ring-2 ring-red-500' : ''}`} required />
+                  <input type="text" id="swiftBic" name="swiftBic" value={swiftBic} onChange={e => setSwiftBic(e.target.value.toUpperCase())} onBlur={handleBlur} className={`mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400 font-mono tracking-wider ${errors.swiftBic ? 'ring-2 ring-red-500' : ''}`} required maxLength={11} placeholder="e.g., CHASUS33"/>
                   {errors.swiftBic && <p className="mt-1 text-sm text-red-600">{errors.swiftBic}</p>}
                 </div>
                 <div className="flex items-start pt-2">

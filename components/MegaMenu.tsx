@@ -4,8 +4,7 @@ import {
     LifebuoyIcon, CashIcon, QuestionMarkCircleIcon, WalletIcon, ChartBarIcon, 
     ShoppingBagIcon, MapPinIcon, XIcon, ApexBankLogo, CubeTransparentIcon
 } from './Icons';
-
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform';
+import { View } from '../types';
 
 interface MegaMenuProps {
   isOpen: boolean;

@@ -3,8 +3,8 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
 import { Recipients } from './components/Recipients';
-import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme } from './types';
-import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARD_DETAILS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE, INITIAL_PLATFORM_SETTINGS, THEME_COLORS } from './constants';
+import { Transaction, Recipient, TransactionStatus, Card, Notification, NotificationType, TransferLimits, Country, InsuranceProduct, LoanApplication, LoanApplicationStatus, Account, VerificationLevel, CryptoHolding, CryptoAsset, SubscriptionService, AppleCardDetails, AppleCardTransaction, SpendingLimit, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, View } from './types';
+import { INITIAL_RECIPIENTS, INITIAL_TRANSACTIONS, INITIAL_CARDS, INITIAL_CARD_TRANSACTIONS, INITIAL_TRANSFER_LIMITS, SELF_RECIPIENT, INITIAL_ACCOUNTS, INITIAL_CRYPTO_HOLDINGS, INITIAL_CRYPTO_ASSETS, CRYPTO_TRADE_FEE_PERCENT, INITIAL_SUBSCRIPTIONS, INITIAL_APPLE_CARD_DETAILS, INITIAL_APPLE_CARD_TRANSACTIONS, INITIAL_TRAVEL_PLANS, INITIAL_SECURITY_SETTINGS, INITIAL_TRUSTED_DEVICES, USER_PROFILE, INITIAL_PLATFORM_SETTINGS, THEME_COLORS } from './constants';
 import { Welcome } from './components/Welcome';
 import { ProfileSignIn } from './components/ProfileSignIn';
 import { ActivityLog } from './components/ActivityLog';
@@ -20,6 +20,7 @@ import { InactivityModal } from './components/InactivityModal';
 import { TravelCheckIn } from './components/TravelCheckIn';
 import { PlatformFeatures } from './components/PlatformFeatures';
 import { DynamicIslandSimulator } from './components/DynamicIslandSimulator';
+import { BankingChat } from './components/BankingChat';
 import {
   sendTransactionalEmail,
   generateTransactionReceiptEmail,
@@ -151,7 +152,6 @@ const Insurance: React.FC = () => {
 };
 
 
-type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform';
 type AuthStatus = 'loggedOut' | 'profileSignIn' | 'loggedIn';
 
 const INACTIVITY_WARNING_TIMEOUT = 9 * 60 * 1000; // 9 minutes
@@ -168,7 +168,7 @@ function App() {
   const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
   const [recipients, setRecipients] = useState<Recipient[]>(INITIAL_RECIPIENTS);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
-  const [cardDetails, setCardDetails] = useState<Card>(INITIAL_CARD_DETAILS);
+  const [cards, setCards] = useState<Card[]>(INITIAL_CARDS);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [transferLimits, setTransferLimits] = useState<TransferLimits>(INITIAL_TRANSFER_LIMITS);
   const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
@@ -197,7 +197,8 @@ function App() {
         addNotification(
             NotificationType.SECURITY,
             'Welcome to ApexBank!',
-            'Your account has been successfully created. We\'re glad to have you.'
+            'Your account has been successfully created. We\'re glad to have you.',
+            'dashboard'
         );
         const { subject, body } = generateWelcomeEmail(USER_NAME);
         sendTransactionalEmail(USER_EMAIL, subject, body);
@@ -206,7 +207,8 @@ function App() {
         addNotification(
             NotificationType.SECURITY,
             'Successful Sign In',
-            'Your account was accessed from a new device. If this was not you, please contact support.'
+            'Your account was accessed from a new device. If this was not you, please contact support.',
+            'security'
         );
         const { subject, body } = generateLoginAlertEmail(USER_NAME);
         sendTransactionalEmail(USER_EMAIL, subject, body);
@@ -227,7 +229,7 @@ function App() {
     setNotifications([]); // Clear notifications on logout
   }, []);
 
-  const addNotification = useCallback((type: NotificationType, title: string, message: string) => {
+  const addNotification = useCallback((type: NotificationType, title: string, message: string, linkTo?: View) => {
     const newNotification: Notification = {
       id: `notif_${Date.now()}`,
       type,
@@ -235,6 +237,7 @@ function App() {
       message,
       timestamp: new Date(),
       read: false,
+      linkTo,
     };
     setNotifications(prev => [newNotification, ...prev]);
   }, []);
@@ -267,7 +270,8 @@ function App() {
     addNotification(
         NotificationType.SECURITY,
         'New Recipient Added',
-        `"${newRecipient.fullName}" was added to your recipients list.`
+        `"${newRecipient.fullName}" was added to your recipients list.`,
+        'recipients'
     );
 
     const { subject, body } = generateNewRecipientEmail(USER_NAME, newRecipient.fullName);
@@ -282,7 +286,8 @@ function App() {
      addNotification(
         NotificationType.SECURITY,
         'Recipient Updated',
-        `A nickname was updated for one of your recipients.`
+        `A nickname was updated for one of your recipients.`,
+        'recipients'
     );
   };
   
@@ -295,7 +300,8 @@ function App() {
     addNotification(
       NotificationType.SECURITY,
       'Account Nickname Updated',
-      `Your account nickname has been successfully updated.`
+      `Your account nickname has been successfully updated.`,
+      'accounts'
     );
   };
 
@@ -317,7 +323,8 @@ function App() {
                   addNotification(
                       NotificationType.LOAN,
                       `Loan Application ${newStatus}`,
-                      `Your application for a ${app.loanProduct.name} of ${app.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been ${newStatus.toLowerCase()}.`
+                      `Your application for a ${app.loanProduct.name} of ${app.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been ${newStatus.toLowerCase()}.`,
+                      'loans'
                   );
                   if (newStatus === LoanApplicationStatus.APPROVED) {
                     // Find checking account to deposit funds
@@ -330,7 +337,8 @@ function App() {
                     addNotification(
                         NotificationType.TRANSACTION,
                         'Funds Disbursed',
-                        `${app.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been disbursed to your account.`
+                        `${app.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been disbursed to your account.`,
+                        'accounts'
                     );
                   }
                   return { ...app, status: newStatus };
@@ -346,7 +354,7 @@ function App() {
     
     const sourceAccount = accounts.find(acc => acc.id === txData.accountId);
     if (!sourceAccount || sourceAccount.balance < totalCost) {
-        addNotification(NotificationType.TRANSACTION, 'Transaction Failed', 'Insufficient funds for this transfer.');
+        addNotification(NotificationType.TRANSACTION, 'Transaction Failed', 'Insufficient funds for this transfer.', 'send');
         return null;
     }
 
@@ -355,7 +363,7 @@ function App() {
     today.setHours(0,0,0,0);
     const dailyTx = transactions.filter(t => t.statusTimestamps.Submitted.getTime() >= today.getTime());
     if (dailyTx.length >= transferLimits.daily.count) {
-      addNotification(NotificationType.TRANSACTION, 'Transaction Failed', 'You have exceeded your daily transaction limit.');
+      addNotification(NotificationType.TRANSACTION, 'Transaction Failed', 'You have exceeded your daily transaction limit.', 'security');
       return null;
     }
 
@@ -364,6 +372,7 @@ function App() {
       id: `txn_${now.getTime()}`,
       status: TransactionStatus.SUBMITTED,
       estimatedArrival: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days
+      requiresAuth: true,
       statusTimestamps: {
         [TransactionStatus.SUBMITTED]: now,
       },
@@ -377,7 +386,8 @@ function App() {
     addNotification(
         NotificationType.TRANSACTION,
         'Transfer Submitted',
-        `Your transfer of ${txData.sendAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} to ${txData.recipient.fullName} has been submitted.`
+        `Your transfer of ${txData.sendAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} to ${txData.recipient.fullName} has been submitted.`,
+        'history'
     );
 
     const { subject, body } = generateTransactionReceiptEmail(newTransaction, USER_NAME);
@@ -419,7 +429,8 @@ function App() {
     addNotification(
         NotificationType.TRANSACTION,
         'Funds Added',
-        `${amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been added to your account.`
+        `${amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} has been added to your account.`,
+        'accounts'
     );
 
     const { subject, body } = generateDepositConfirmationEmail(USER_NAME, amount, cardLastFour);
@@ -427,18 +438,43 @@ function App() {
     sendSmsNotification(USER_PHONE, generateDepositConfirmationSms(amount, cardLastFour));
   };
 
-
-  const handleToggleFreeze = () => {
-    const isNowFrozen = !cardDetails.isFrozen;
-    setCardDetails(prev => ({...prev, isFrozen: isNowFrozen }));
+  const addCard = (cardData: Omit<Card, 'id' | 'isFrozen'>) => {
+    const newCard: Card = {
+        ...cardData,
+        id: `card_${Date.now()}`,
+        isFrozen: false,
+    };
+    setCards(prev => [...prev, newCard]);
     addNotification(
-      NotificationType.CARD,
-      isNowFrozen ? 'Card Frozen' : 'Card Unfrozen',
-      `Your card ending in ${cardDetails.lastFour} has been ${isNowFrozen ? 'frozen' : 'unfrozen'}.`
+        NotificationType.CARD,
+        'New Card Added',
+        `A new ${cardData.network} card ending in ${cardData.lastFour} has been added to your account.`,
+        'cards'
     );
+  };
 
-    const { subject, body } = generateCardStatusEmail(USER_NAME, isNowFrozen);
-    sendTransactionalEmail(USER_EMAIL, subject, body);
+  const handleToggleFreeze = (cardId: string) => {
+    let updatedCard: Card | undefined;
+    setCards(prev => prev.map(c => {
+        if (c.id === cardId) {
+            updatedCard = { ...c, isFrozen: !c.isFrozen };
+            return updatedCard;
+        }
+        return c;
+    }));
+
+    if (updatedCard) {
+        const isNowFrozen = updatedCard.isFrozen;
+        addNotification(
+            NotificationType.CARD,
+            isNowFrozen ? 'Card Frozen' : 'Card Unfrozen',
+            `Your ${updatedCard.network} card ending in ${updatedCard.lastFour} has been ${isNowFrozen ? 'frozen' : 'unfrozen'}.`,
+            'cards'
+        );
+
+        const { subject, body } = generateCardStatusEmail(USER_NAME, isNowFrozen, updatedCard.lastFour);
+        sendTransactionalEmail(USER_EMAIL, subject, body);
+    }
   };
   
   const handlePaySubscription = (subscriptionId: string) => {
@@ -446,7 +482,7 @@ function App() {
     const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
 
     if (!sub || !checkingAccount || checkingAccount.balance < sub.amount) {
-      addNotification(NotificationType.SUBSCRIPTION, 'Payment Failed', `Insufficient funds to pay for ${sub?.provider}.`);
+      addNotification(NotificationType.SUBSCRIPTION, 'Payment Failed', `Insufficient funds to pay for ${sub?.provider}.`, 'accounts');
       return false;
     }
 
@@ -477,8 +513,39 @@ function App() {
     // Mark subscription as paid
     setSubscriptions(prev => prev.map(s => s.id === subscriptionId ? { ...s, isPaid: true } : s));
 
-    addNotification(NotificationType.SUBSCRIPTION, 'Payment Successful', `Your payment of ${sub.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} to ${sub.provider} was successful.`);
+    addNotification(NotificationType.SUBSCRIPTION, 'Payment Successful', `Your payment of ${sub.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} to ${sub.provider} was successful.`, 'services');
     return true;
+  };
+
+  const handleAuthorizeTransaction = (transactionId: string) => {
+    let authorizedTx: Transaction | undefined;
+
+    setTransactions(prev => prev.map(tx => {
+        if (tx.id === transactionId && tx.status === TransactionStatus.IN_TRANSIT) {
+            authorizedTx = {
+                ...tx,
+                status: TransactionStatus.FUNDS_ARRIVED,
+                statusTimestamps: {
+                    ...tx.statusTimestamps,
+                    [TransactionStatus.FUNDS_ARRIVED]: new Date(),
+                },
+                requiresAuth: false, // Mark as completed
+            };
+            return authorizedTx;
+        }
+        return tx;
+    }));
+
+    if (authorizedTx) {
+        addNotification(
+            NotificationType.TRANSACTION,
+            'Funds Arrived!',
+            `Your transfer to ${authorizedTx.recipient.fullName} has been successfully delivered.`,
+            'history'
+        );
+        const { subject, body } = generateFundsArrivedEmail(authorizedTx, USER_NAME);
+        sendTransactionalEmail(USER_EMAIL, subject, body);
+    }
   };
 
   const updateTransactionStatuses = useCallback(() => {
@@ -511,7 +578,7 @@ function App() {
         }
 
         // Progress from IN_TRANSIT -> FUNDS_ARRIVED (simulates a longer delay)
-        if (tx.status === TransactionStatus.IN_TRANSIT && now.getTime() >= tx.estimatedArrival.getTime()) {
+        if (tx.status === TransactionStatus.IN_TRANSIT && now.getTime() >= tx.estimatedArrival.getTime() && !tx.requiresAuth) {
           newStatus = TransactionStatus.FUNDS_ARRIVED;
           newTimestamps[TransactionStatus.FUNDS_ARRIVED] = now;
           hasChanged = true;
@@ -523,6 +590,7 @@ function App() {
             message: `Your transfer to ${tx.recipient.fullName} has been successfully delivered.`,
             timestamp: new Date(),
             read: false,
+            linkTo: 'history',
           });
 
           // Send email for funds arrival
@@ -557,7 +625,7 @@ function App() {
   const onBuyCrypto = (assetId: string, usdAmount: number, assetPrice: number): boolean => {
     const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
     if (!checkingAccount || checkingAccount.balance < usdAmount) {
-      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient funds in your checking account.');
+      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient funds in your checking account.', 'accounts');
       return false;
     }
 
@@ -581,14 +649,14 @@ function App() {
       }
     });
 
-    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully bought ${cryptoReceived.toFixed(6)} ${assetId.toUpperCase()}.`);
+    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully bought ${cryptoReceived.toFixed(6)} ${assetId.toUpperCase()}.`, 'crypto');
     return true;
   };
   
   const onSellCrypto = (assetId: string, cryptoAmount: number, assetPrice: number): boolean => {
     const holding = cryptoHoldings.find(h => h.assetId === assetId);
     if (!holding || holding.amount < cryptoAmount) {
-      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient crypto balance.');
+      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient crypto balance.', 'crypto');
       return false;
     }
 
@@ -602,7 +670,7 @@ function App() {
     // Update holdings
     setCryptoHoldings(prev => prev.map(h => h.assetId === assetId ? { ...h, amount: h.amount - cryptoAmount } : h).filter(h => h.amount > 0.000001));
 
-    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully sold ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()}.`);
+    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully sold ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()}.`, 'crypto');
     return true;
   };
 
@@ -615,7 +683,7 @@ function App() {
       status: new Date() >= startDate && new Date() <= endDate ? TravelPlanStatus.ACTIVE : (new Date() < startDate ? TravelPlanStatus.UPCOMING : TravelPlanStatus.COMPLETED)
     };
     setTravelPlans(prev => [...prev, newPlan].sort((a,b) => a.startDate.getTime() - b.startDate.getTime()));
-    addNotification(NotificationType.TRAVEL, "Travel Plan Added", `Your trip to ${country.name} has been successfully registered.`);
+    addNotification(NotificationType.TRAVEL, "Travel Plan Added", `Your trip to ${country.name} has been successfully registered.`, 'checkin');
   };
 
   const handleUpdateTheme = (theme: PlatformTheme) => {
@@ -629,7 +697,7 @@ function App() {
 
   const handleUpdateSpendingLimits = (limits: SpendingLimit[]) => {
     setAppleCardDetails(prev => ({...prev, spendingLimits: limits}));
-    addNotification(NotificationType.CARD, 'Spending Limits Updated', 'Your Apple Card spending limits have been successfully updated.');
+    addNotification(NotificationType.CARD, 'Spending Limits Updated', 'Your Apple Card spending limits have been successfully updated.', 'services');
   };
   
   const handleUpdateTransactionCategory = (transactionId: string, category: SpendingCategory) => {
@@ -637,6 +705,10 @@ function App() {
   };
   
   const inProgressTransaction = transactions.find(tx => tx.status !== TransactionStatus.FUNDS_ARRIVED);
+
+  const handleNotificationClick = (view: View) => {
+    setActiveView(view);
+  };
 
 
   useEffect(() => {
@@ -697,6 +769,7 @@ function App() {
               transactions={transactions}
               securitySettings={securitySettings}
               hapticsEnabled={platformSettings.hapticsEnabled}
+              onAuthorizeTransaction={handleAuthorizeTransaction}
             />;
             break;
           case 'recipients':
@@ -719,9 +792,10 @@ function App() {
             break;
           case 'cards':
             viewContent = <CardManagement
-                card={cardDetails}
+                cards={cards}
                 transactions={INITIAL_CARD_TRANSACTIONS}
                 onToggleFreeze={handleToggleFreeze}
+                onAddCard={addCard}
                 accountBalance={checkingAccount?.balance || 0}
                 onAddFunds={addFunds}
             />;
@@ -789,6 +863,7 @@ function App() {
               onLogout={handleInitiateLogout}
               notifications={notifications}
               onMarkNotificationsAsRead={markNotificationsAsRead}
+              onNotificationClick={handleNotificationClick}
             />
             <DynamicIslandSimulator transaction={inProgressTransaction || null} />
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -796,6 +871,7 @@ function App() {
             </main>
              {isLogoutModalOpen && <LogoutConfirmationModal onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleConfirmLogout} />}
              {showInactivityModal && <InactivityModal onLogout={handleConfirmLogout} onStayLoggedIn={resetInactivityTimer} countdownStart={INACTIVITY_MODAL_COUNTDOWN} />}
+             <BankingChat />
           </div>
         );
       default:

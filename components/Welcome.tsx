@@ -15,7 +15,10 @@ import {
     Soc2Icon,
     LightningBoltIcon,
     TrendingUpIcon,
-    ServerIcon
+    ServerIcon,
+    XSocialIcon,
+    LinkedInIcon,
+    InstagramIcon
 } from './Icons';
 import { LoginModal } from './LoginModal';
 import { AccountCreationModal } from './AccountCreationModal';
@@ -286,11 +289,45 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
         </main>
 
         {/* Footer */}
-        <footer className="bg-slate-800 text-slate-400 py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
-              <p>&copy; {new Date().getFullYear()} ApexBank. All rights reserved.</p>
-              <p className="mt-2">ApexBank is a financial technology company, not a bank. Banking services are provided by our licensed partners.</p>
-          </div>
+        <footer className="bg-slate-800 text-slate-400 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+                    <div>
+                        <div className="flex items-center justify-center md:justify-start space-x-2">
+                            <ApexBankLogo />
+                            <h2 className="text-xl font-bold text-white">ApexBank</h2>
+                        </div>
+                        <p className="mt-4 text-sm">The Future of Global Banking. Today.</p>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-white tracking-wider uppercase">Quick Links</h3>
+                        <ul className="mt-4 space-y-2 text-sm">
+                            <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+                            <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+                            <li><a href="#" className="hover:text-white transition-colors">Press</a></li>
+                            <li><a href="#" className="hover:text-white transition-colors">Contact Support</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-white tracking-wider uppercase">Connect With Us</h3>
+                        <div className="flex justify-center md:justify-start space-x-6 mt-4">
+                            <a href="#" aria-label="X" className="hover:text-white transition-transform transform hover:scale-110">
+                                <XSocialIcon className="w-6 h-6"/>
+                            </a>
+                            <a href="#" aria-label="LinkedIn" className="hover:text-white transition-transform transform hover:scale-110">
+                                <LinkedInIcon className="w-6 h-6"/>
+                            </a>
+                            <a href="#" aria-label="Instagram" className="hover:text-white transition-transform transform hover:scale-110">
+                                <InstagramIcon className="w-6 h-6"/>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-12 border-t border-slate-700 pt-8 text-center text-sm">
+                    <p>&copy; {new Date().getFullYear()} ApexBank. All rights reserved.</p>
+                    <p className="mt-2">ApexBank is a financial technology company, not a bank. Banking services are provided by our licensed partners.</p>
+                </div>
+            </div>
         </footer>
       </div>
       {isLoginModalOpen && (

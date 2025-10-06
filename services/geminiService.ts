@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Type, GenerateContentResponse, Chat } from "@google/genai";
 import { NewsArticle, InsuranceProduct, LoanProduct, SystemUpdate, AccountType, VerificationLevel } from '../types';
 
 // FIX: Conditionally initialize the Gemini AI client only if an API key is available.
@@ -498,7 +498,7 @@ export const getAccountPerks = async (accountType: AccountType, verificationLeve
     try {
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `As a banking security expert, generate a list of exactly 3 compelling, modern security perks for a "${accountType}" account for a customer who is at "${verificationLevel}" verification status. Higher verification levels should unlock more advanced perks. For example, a "Verified+" user might get enhanced insurance or proactive monitoring. The tone should be reassuring and professional.`,
+            contents: `As a banking security expert, generate a list of exactly 3 compelling, modern security perks for a "${accountType}" account for a customer who is at "${verificationLevel}" verification status. The verification levels are: 'Unverified', 'Level 1: SSN Verified', 'Level 2: Document Verified', 'Level 3: Liveness Verified'. Higher verification levels should unlock more advanced perks. For example, a 'Liveness Verified' user might get enhanced insurance or proactive monitoring. The tone should be reassuring and professional.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -532,4 +532,39 @@ export const getAccountPerks = async (accountType: AccountType, verificationLeve
         accountPerksCache.set(cacheKey, errorResult);
         return errorResult;
     }
+};
+
+const createMockChat = () => ({
+  async *sendMessageStream(params: { message: string }) {
+    const responseText = "I'm currently operating in a simulated mode as the AI service is unavailable. I can provide answers to some common questions. How can I help you?";
+    const chunks = responseText.split(' ');
+    for (const chunk of chunks) {
+      await new Promise(res => setTimeout(res, 50 + Math.random() * 50));
+      yield { text: chunk + ' ' } as GenerateContentResponse;
+    }
+  },
+});
+
+export const startChatSession = (): Chat | ReturnType<typeof createMockChat> => {
+  if (!ai) {
+    console.log("Using mock chat session.");
+    return createMockChat();
+  }
+
+  console.log("Initializing new Gemini chat session.");
+  const chat = ai.chats.create({
+    model: 'gemini-2.5-flash',
+    config: {
+      systemInstruction: `You are a friendly and helpful customer support AI for ApexBank, a modern fintech specializing in fast, secure, and transparent international money transfers. 
+      Your goal is to provide clear, concise, and accurate information. 
+      - Be professional and reassuring.
+      - Do not invent features or provide financial advice.
+      - If you don't know an answer, say so and suggest contacting human support through the 'Support' or 'Contact Us' page.
+      - Keep your answers relatively short and easy to understand.
+      - Use formatting like bolding for key terms and bullet points for lists when it makes the answer easier to read.
+      - When asked about a feature, you can assume the bank has: international transfers, virtual & physical cards (Visa/Mastercard), crypto trading (BTC, ETH), loans, insurance, and bill pay services.`,
+    },
+  });
+
+  return chat;
 };

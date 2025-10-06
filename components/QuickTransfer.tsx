@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Account, Recipient, Transaction } from '../types';
 import { SELF_RECIPIENT, FIXED_FEE, EXCHANGE_RATES } from '../constants';
 import { SpinnerIcon, CheckCircleIcon, getBankIcon, UserCircleIcon, SendIcon } from './Icons';
@@ -18,6 +18,8 @@ export const QuickTransfer: React.FC<QuickTransferProps> = ({ accounts, recipien
     const [amount, setAmount] = useState('');
     const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle');
     const [error, setError] = useState('');
+    const [tooltip, setTooltip] = useState({ show: false, message: '' });
+    const tooltipTimeout = useRef<number | null>(null);
 
     const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
     const selectedRecipient = quickRecipients.find(rec => rec.id === selectedRecipientId);
@@ -27,6 +29,34 @@ export const QuickTransfer: React.FC<QuickTransferProps> = ({ accounts, recipien
     const receiveAmount = numericAmount * exchangeRate;
     const totalCost = numericAmount > 0 ? numericAmount + FIXED_FEE : 0;
     const isAmountInvalid = !sourceAccount || totalCost > sourceAccount.balance || numericAmount <= 0;
+
+    const showTooltip = (message: string, autoHide: boolean = false) => {
+        if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+        setTooltip({ show: true, message });
+        if (autoHide) {
+            tooltipTimeout.current = window.setTimeout(() => {
+                setTooltip({ show: false, message: '' });
+            }, 2500);
+        }
+    };
+
+    const hideTooltip = () => {
+        if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+        setTooltip({ show: false, message: '' });
+    };
+
+    const handleDisabledInteraction = (isClick: boolean) => {
+        let message = '';
+        if (numericAmount <= 0) {
+            message = 'Please enter an amount to send.';
+        } else if (isAmountInvalid) {
+            message = 'Insufficient balance for this transaction.';
+        }
+
+        if (message) {
+            showTooltip(message, isClick);
+        }
+    };
 
     const handleSend = () => {
         if (isAmountInvalid || !selectedRecipient || !sourceAccount) return;
@@ -144,23 +174,38 @@ export const QuickTransfer: React.FC<QuickTransferProps> = ({ accounts, recipien
                                 <span className="font-mono text-slate-800">{totalCost.toFixed(2)} USD</span>
                             </div>
                          </div>
-                        <button
-                            onClick={handleSend}
-                            disabled={isAmountInvalid || status === 'sending'}
-                            className="w-full flex items-center justify-center space-x-2 py-3 bg-primary text-white rounded-lg shadow-md hover:shadow-lg transition-shadow disabled:bg-primary-300 disabled:cursor-not-allowed"
-                        >
-                            {status === 'sending' ? (
-                                <>
-                                    <SpinnerIcon className="w-5 h-5"/>
-                                    <span>Sending...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <SendIcon className="w-5 h-5"/>
-                                    <span>Send Now</span>
-                                </>
+                        <div className="relative">
+                            <button
+                                onClick={handleSend}
+                                disabled={isAmountInvalid || status === 'sending'}
+                                className="w-full flex items-center justify-center space-x-2 py-3 bg-primary text-white rounded-lg shadow-md hover:shadow-lg transition-shadow disabled:bg-primary-300 disabled:cursor-not-allowed"
+                            >
+                                {status === 'sending' ? (
+                                    <>
+                                        <SpinnerIcon className="w-5 h-5"/>
+                                        <span>Sending...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <SendIcon className="w-5 h-5"/>
+                                        <span>Send Now</span>
+                                    </>
+                                )}
+                            </button>
+                            {isAmountInvalid && status !== 'sending' && (
+                                <div
+                                    className="absolute inset-0 cursor-not-allowed"
+                                    onClick={() => handleDisabledInteraction(true)}
+                                    onMouseEnter={() => handleDisabledInteraction(false)}
+                                    onMouseLeave={hideTooltip}
+                                />
                             )}
-                        </button>
+                            {tooltip.show && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-sm font-medium text-white bg-slate-800 rounded-md shadow-lg whitespace-nowrap z-10 animate-fade-in-up">
+                                    {tooltip.message}
+                                </div>
+                            )}
+                        </div>
                     </>
                 )}
             </div>

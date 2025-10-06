@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CheckCircleIcon, PencilIcon, DevicePhoneMobileIcon, FingerprintIcon, LockClosedIcon, UserCircleIcon, NetworkIcon, IdentificationIcon, ComputerDesktopIcon, FaceIdIcon } from './Icons';
+import { CheckCircleIcon, PencilIcon, DevicePhoneMobileIcon, FingerprintIcon, LockClosedIcon, UserCircleIcon, NetworkIcon, IdentificationIcon, ComputerDesktopIcon, FaceIdIcon, CertificateIcon } from './Icons';
 import { TransferLimits, VerificationLevel, SecuritySettings, TrustedDevice } from '../types';
 import { ManageLimitsModal } from './ManageLimitsModal';
 import { VerificationCenter } from './VerificationCenter';
@@ -67,8 +67,15 @@ export const Security: React.FC<SettingsProps> = ({
     let score = 25; // Base score
     if (securitySettings.mfaEnabled) score += 25;
     if (securitySettings.biometricsEnabled) score += 25;
-    if (verificationLevel === VerificationLevel.LEVEL_1) score += 12.5;
-    if (verificationLevel === VerificationLevel.LEVEL_2) score += 25;
+    
+    if (verificationLevel === VerificationLevel.LEVEL_3) {
+        score += 25;
+    } else if (verificationLevel === VerificationLevel.LEVEL_2) {
+        score += 15;
+    } else if (verificationLevel === VerificationLevel.LEVEL_1) {
+        score += 10;
+    }
+
     return Math.round(score);
   }, [securitySettings, verificationLevel]);
 
@@ -84,9 +91,13 @@ export const Security: React.FC<SettingsProps> = ({
 
   const getVerificationStatusStyle = () => {
     switch(verificationLevel) {
-        case VerificationLevel.LEVEL_2: return "text-green-600 bg-green-100";
-        case VerificationLevel.LEVEL_1: return "text-blue-600 bg-blue-100";
-        default: return "text-yellow-600 bg-yellow-100";
+        case VerificationLevel.LEVEL_3:
+        case VerificationLevel.LEVEL_2: 
+            return "text-green-600 bg-green-100";
+        case VerificationLevel.LEVEL_1: 
+            return "text-blue-600 bg-blue-100";
+        default: 
+            return "text-yellow-600 bg-yellow-100";
     }
   };
 
@@ -114,7 +125,10 @@ export const Security: React.FC<SettingsProps> = ({
     <>
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
-            <h2 className="text-2xl font-bold text-slate-800">Security Center</h2>
+            <div className="flex items-center space-x-3">
+                <CertificateIcon className="w-8 h-8 text-primary"/>
+                <h2 className="text-2xl font-bold text-slate-800">Security Center</h2>
+            </div>
             <p className="text-sm text-slate-500 mt-1">Manage your account security settings and connected services.</p>
         </div>
 
@@ -153,8 +167,8 @@ export const Security: React.FC<SettingsProps> = ({
                         <p className={`text-sm font-semibold px-2 py-0.5 rounded-full inline-block mt-1 ${getVerificationStatusStyle()}`}>{verificationLevel}</p>
                     </div>
                 </div>
-                 <button onClick={() => setIsVerificationModalOpen(true)} className="px-3 py-1.5 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow disabled:opacity-50" disabled={verificationLevel === VerificationLevel.LEVEL_2}>
-                    {verificationLevel === VerificationLevel.LEVEL_2 ? 'Fully Verified' : 'Increase Level'}
+                 <button onClick={() => setIsVerificationModalOpen(true)} className="px-3 py-1.5 text-sm font-medium text-primary bg-slate-200 rounded-lg shadow-digital active:shadow-digital-inset transition-shadow disabled:opacity-50" disabled={verificationLevel === VerificationLevel.LEVEL_3}>
+                    {verificationLevel === VerificationLevel.LEVEL_3 ? 'Fully Verified' : 'Increase Level'}
                 </button>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { VerificationLevel } from '../types';
-import { SpinnerIcon, CheckCircleIcon, DocumentCheckIcon, CameraIcon } from './Icons';
+import { SpinnerIcon, CheckCircleIcon, DocumentCheckIcon, CameraIcon, IdentificationIcon, ShieldCheckIcon } from './Icons';
 
 interface VerificationCenterProps {
   currentLevel: VerificationLevel;
@@ -8,8 +8,9 @@ interface VerificationCenterProps {
 }
 
 const steps = [
-  { level: VerificationLevel.LEVEL_1, title: "Document Verification", icon: <DocumentCheckIcon className="w-8 h-8"/>, description: "Upload a government-issued photo ID." },
-  { level: VerificationLevel.LEVEL_2, title: "Liveness Check", icon: <CameraIcon className="w-8 h-8"/>, description: "Confirm you're a real person with a quick video scan." }
+  { level: VerificationLevel.LEVEL_1, title: "Identity Details", icon: <IdentificationIcon className="w-8 h-8"/>, description: "Verify your Social Security Number." },
+  { level: VerificationLevel.LEVEL_2, title: "Document Verification", icon: <DocumentCheckIcon className="w-8 h-8"/>, description: "Upload a government-issued photo ID." },
+  { level: VerificationLevel.LEVEL_3, title: "Liveness Check", icon: <CameraIcon className="w-8 h-8"/>, description: "Confirm you're a real person with a quick video scan." }
 ];
 
 const DocumentScanAnimation = () => (
@@ -65,20 +66,31 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
   const [activeStep, setActiveStep] = useState(0);
   const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [progress, setProgress] = useState(0);
+  const [ssn, setSsn] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // If the user is already at a certain level, start them at the next step
-    if (currentLevel === VerificationLevel.LEVEL_1) {
-      setActiveStep(1);
-    }
+    if (currentLevel === VerificationLevel.UNVERIFIED) setActiveStep(0);
+    if (currentLevel === VerificationLevel.LEVEL_1) setActiveStep(1);
+    if (currentLevel === VerificationLevel.LEVEL_2) setActiveStep(2);
+    if (currentLevel === VerificationLevel.LEVEL_3) setActiveStep(2); // If already fully verified, show last step
   }, [currentLevel]);
+
+  const handleSsnSubmit = () => {
+    if (ssn.replace(/-/g, '').length !== 9) {
+        setErrorMessage('Please enter a valid 9-digit SSN.');
+        setStatus('error');
+        return;
+    }
+    setStatus('processing');
+    setErrorMessage('');
+    setTimeout(() => {
+        setStatus('success');
+    }, 2500);
+  }
   
   const handleDocumentUpload = () => {
     setStatus('processing');
-    setProgress(0);
-    // Simulate a 2-second scan
     setTimeout(() => {
         setStatus('success');
     }, 2000);
@@ -93,7 +105,6 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
             }
-            // Simulate a 3-second scan
             setTimeout(() => {
                 stream.getTracks().forEach(track => track.stop());
                 setStatus('success');
@@ -110,13 +121,24 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
   };
 
   const handleNext = () => {
+    const completedLevel = steps[activeStep].level;
     if (activeStep < steps.length - 1) {
+      onClose(completedLevel); // Update level immediately after step completion
       setActiveStep(prev => prev + 1);
       setStatus('idle');
-      setProgress(0);
     } else {
-      onClose(steps[activeStep].level);
+      onClose(completedLevel);
     }
+  };
+
+  const handleSsnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 5) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 5)}-${value.slice(5, 9)}`;
+    } else if (value.length > 3) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 5)}`;
+    }
+    setSsn(value);
   };
   
   const renderStepContent = () => {
@@ -126,13 +148,22 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
       if (stepInfo.level === VerificationLevel.LEVEL_1) {
         return (
           <div className="text-center">
+            <h3 className="text-lg font-bold text-slate-800">Verifying Identity</h3>
+            <div className="my-4"><SpinnerIcon className="w-12 h-12 text-primary mx-auto"/></div>
+            <p className="text-sm text-slate-500">Securely checking against government databases...</p>
+          </div>
+        );
+      }
+      if (stepInfo.level === VerificationLevel.LEVEL_2) {
+        return (
+          <div className="text-center">
             <h3 className="text-lg font-bold text-slate-800">Securely analyzing document...</h3>
             <DocumentScanAnimation />
             <p className="text-sm text-slate-500">Our AI is verifying your document details.</p>
           </div>
         );
       }
-      if (stepInfo.level === VerificationLevel.LEVEL_2) {
+      if (stepInfo.level === VerificationLevel.LEVEL_3) {
         return (
           <div className="text-center">
             <h3 className="text-lg font-bold text-slate-800">Performing liveness check...</h3>
@@ -160,6 +191,30 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
      if (stepInfo.level === VerificationLevel.LEVEL_1) {
         return (
           <div className="text-center">
+            <h3 className="text-lg font-bold text-slate-800">Verify Your Identity</h3>
+            <p className="text-sm text-slate-500 mt-2">Please enter your Social Security Number. Your information is encrypted and stored securely.</p>
+             <div className="mt-4">
+                <label htmlFor="ssn" className="sr-only">Social Security Number</label>
+                <input
+                    type="text"
+                    id="ssn"
+                    value={ssn}
+                    onChange={handleSsnChange}
+                    className="w-full bg-slate-200 border-0 p-3 text-center text-2xl tracking-[.25em] rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400"
+                    placeholder="***-**-****"
+                    maxLength={11}
+                />
+             </div>
+             {errorMessage && status === 'error' && <p className="text-red-500 text-xs mt-2">{errorMessage}</p>}
+            <button onClick={handleSsnSubmit} className="w-full mt-4 py-3 text-white bg-primary rounded-lg font-semibold shadow-md">
+                Verify SSN
+            </button>
+          </div>
+        );
+    }
+     if (stepInfo.level === VerificationLevel.LEVEL_2) {
+        return (
+          <div className="text-center">
             <h3 className="text-lg font-bold text-slate-800">Upload Your ID</h3>
             <p className="text-sm text-slate-500 mt-2">Please upload a clear image of a government-issued photo ID.</p>
             <div className="mt-4 p-6 border-2 border-dashed border-slate-300 rounded-lg">
@@ -172,13 +227,12 @@ export const VerificationCenter: React.FC<VerificationCenterProps> = ({ currentL
           </div>
         );
     }
-    
-    if (stepInfo.level === VerificationLevel.LEVEL_2) {
+    if (stepInfo.level === VerificationLevel.LEVEL_3) {
        return (
           <div className="text-center">
             <h3 className="text-lg font-bold text-slate-800">Liveness Check</h3>
             <p className="text-sm text-slate-500 mt-2">We need to verify you're a real person by scanning your face. This takes only a few seconds.</p>
-            {errorMessage && <p className="text-red-500 text-xs mt-2">{errorMessage}</p>}
+            {errorMessage && status === 'error' && <p className="text-red-500 text-xs mt-2">{errorMessage}</p>}
             <button onClick={handleLivenessCheck} className="w-full mt-4 py-3 text-white bg-primary rounded-lg font-semibold shadow-md">
                 Start Camera Scan
             </button>

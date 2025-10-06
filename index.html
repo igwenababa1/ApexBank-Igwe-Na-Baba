@@ -46,6 +46,7 @@
             animation: {
               'pop-in': 'pop-in 0.4s ease-out forwards',
               'flag-pop': 'flag-pop 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+              'fade-in-up': 'fade-in-up 0.3s ease-out forwards',
             },
             keyframes: {
               'pop-in': {
@@ -57,6 +58,10 @@
                 '50%': { transform: 'scale(1.1) rotate(5deg)', opacity: '1' },
                 '70%': { transform: 'scale(0.95) rotate(-2deg)', opacity: '1' },
                 '100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
+              },
+              'fade-in-up': {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
               }
             }
           }

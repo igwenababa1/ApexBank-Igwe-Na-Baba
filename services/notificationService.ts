@@ -93,14 +93,14 @@ export const generateTransactionReceiptSms = (transaction: Transaction): string 
   return `ApexBank: Your transfer of ${amount} to ${transaction.recipient.fullName} has been submitted. Txn ID: ${transaction.id}`;
 };
 
-export const generateCardStatusEmail = (cardholderName: string, isFrozen: boolean): { subject: string; body: string } => {
+export const generateCardStatusEmail = (cardholderName: string, isFrozen: boolean, lastFour: string): { subject: string; body: string } => {
   const status = isFrozen ? 'Frozen' : 'Unfrozen';
   const subject = `Security Alert: Your ApexBank Card has been ${status}`;
   const body = `
     <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
       <h2 style="color: #D97706;">Security Alert</h2>
       <p>Dear ${cardholderName},</p>
-      <p>This is a confirmation that your ApexBank card (ending in <strong>8842</strong>) has been successfully <strong>${status}</strong>.</p>
+      <p>This is a confirmation that your ApexBank card (ending in <strong>${lastFour}</strong>) has been successfully <strong>${status}</strong>.</p>
       <ul>
         <li>If you initiated this action, no further steps are needed.</li>
         <li>If you did NOT authorize this change, please contact our support team immediately.</li>

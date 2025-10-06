@@ -215,15 +215,28 @@ export const EXCHANGE_RATES: { [key: string]: number } = {
     JPY: 157.25,
 };
 
-export const INITIAL_CARD_DETAILS: Card = {
-    id: 'card_1',
-    lastFour: '8842',
-    cardholderName: 'Eleanor Vance',
-    expiryDate: '12/28',
-    fullNumber: '4242 4242 4242 8842',
-    cvc: '123',
-    isFrozen: false,
-};
+export const INITIAL_CARDS: Card[] = [
+    {
+        id: 'card_1',
+        lastFour: '8842',
+        cardholderName: 'Eleanor Vance',
+        expiryDate: '12/28',
+        fullNumber: '4242 4242 4242 8842',
+        cvc: '123',
+        isFrozen: false,
+        network: 'Visa',
+    },
+    {
+        id: 'card_2',
+        lastFour: '5555',
+        cardholderName: 'Eleanor Vance',
+        expiryDate: '06/29',
+        fullNumber: '5555 5555 5555 5555',
+        cvc: '456',
+        isFrozen: false,
+        network: 'Mastercard',
+    }
+];
 
 export const INITIAL_CARD_TRANSACTIONS: CardTransaction[] = [
     { id: 'ctx_1', description: 'Amazon Marketplace', amount: 75.50, date: new Date(now.getTime() - 86400000 * 1), category: 'Shopping' },
@@ -238,6 +251,7 @@ export const INITIAL_TRANSFER_LIMITS: TransferLimits = {
 };
 
 export const USER_PIN = '1234';
+export const NETWORK_AUTH_CODE = '987654';
 
 // --- Crypto Constants ---
 

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Notification, NotificationType } from '../types';
+import { Notification, NotificationType, View } from '../types';
 import { BellIcon, CheckCircleIcon, CreditCardIcon, ShieldCheckIcon } from './Icons';
 
 interface NotificationsPanelProps {
   notifications: Notification[];
   onClose: () => void;
+  onNotificationClick: (view: View) => void;
 }
 
 const getNotificationIcon = (type: NotificationType) => {
@@ -36,7 +37,15 @@ const timeSince = (date: Date) => {
     return Math.floor(seconds) + " seconds ago";
 }
 
-export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose }) => {
+export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, onClose, onNotificationClick }) => {
+    
+  const handleClick = (notification: Notification) => {
+    if (notification.linkTo) {
+      onNotificationClick(notification.linkTo);
+    }
+    onClose();
+  };
+
   return (
     <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-slate-200 rounded-2xl shadow-digital z-50 animate-fade-in-down overflow-hidden">
         <div className="p-4 border-b border-slate-300 flex justify-between items-center">
@@ -52,17 +61,22 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
             ) : (
                 <ul className="divide-y divide-slate-300">
                     {notifications.map(notification => (
-                        <li key={notification.id} className={`p-4 transition-colors duration-200 ${notification.read ? '' : 'bg-primary-50/50'}`}>
-                            <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0 mt-1 p-2 bg-slate-200 rounded-full shadow-digital">
-                                    {getNotificationIcon(notification.type)}
+                        <li key={notification.id} className={`transition-colors duration-200 ${notification.read ? '' : 'bg-primary-50/50'}`}>
+                            <button
+                              onClick={() => handleClick(notification)}
+                              className="w-full text-left p-4 cursor-pointer hover:bg-slate-300/50"
+                            >
+                                <div className="flex items-start space-x-3">
+                                    <div className="flex-shrink-0 mt-1 p-2 bg-slate-200 rounded-full shadow-digital">
+                                        {getNotificationIcon(notification.type)}
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-sm text-slate-800">{notification.title}</p>
+                                        <p className="text-sm text-slate-600">{notification.message}</p>
+                                        <p className="text-xs text-slate-400 mt-1">{timeSince(notification.timestamp)}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-sm text-slate-800">{notification.title}</p>
-                                    <p className="text-sm text-slate-600">{notification.message}</p>
-                                    <p className="text-xs text-slate-400 mt-1">{timeSince(notification.timestamp)}</p>
-                                </div>
-                            </div>
+                            </button>
                         </li>
                     ))}
                 </ul>
