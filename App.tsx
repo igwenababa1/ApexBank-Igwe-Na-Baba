@@ -40,6 +40,8 @@ import {
 } from './services/notificationService';
 import { getInsuranceProductDetails } from './services/geminiService';
 import { DevicePhoneMobileIcon, GlobeAltIcon, ShieldCheckIcon, SpinnerIcon, InfoIcon, CheckCircleIcon } from './components/Icons';
+import { OpeningSequence } from './components/OpeningSequence';
+import { LoggingOut } from './components/LoggingOut';
 
 
 const InsuranceProductCard: React.FC<{ product: InsuranceProduct }> = ({ product }) => {
@@ -153,7 +155,7 @@ const Insurance: React.FC = () => {
 };
 
 
-type AuthStatus = 'loggedOut' | 'profileSignIn' | 'loggedIn';
+type AuthStatus = 'initializing' | 'loggedOut' | 'profileSignIn' | 'loggedIn';
 
 const INACTIVITY_WARNING_TIMEOUT = 9 * 60 * 1000; // 9 minutes
 const INACTIVITY_MODAL_COUNTDOWN = 60; // 60 seconds
@@ -163,7 +165,7 @@ const USER_NAME = "Eleanor Vance";
 const USER_PHONE = "+1-555-012-1234";
 
 function App() {
-  const [authStatus, setAuthStatus] = useState<AuthStatus>('loggedOut');
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('initializing');
   const [isNewAccountLogin, setIsNewAccountLogin] = useState(false);
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
@@ -186,6 +188,7 @@ function App() {
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const inactivityTimerRef = React.useRef<number>();
   
   const handleCredentialsSuccess = (isNewAccount = false) => {
@@ -222,13 +225,18 @@ function App() {
     setIsLogoutModalOpen(true);
   };
 
+  const handleFinalizeLogout = useCallback(() => {
+    setAuthStatus('loggedOut');
+    setActiveView('dashboard');
+    setNotifications([]); // Clear notifications on logout
+    setIsLoggingOut(false); // Hide logging out screen
+  }, []);
+
   const handleConfirmLogout = useCallback(() => {
     clearTimeout(inactivityTimerRef.current);
     setShowInactivityModal(false);
     setIsLogoutModalOpen(false);
-    setAuthStatus('loggedOut');
-    setActiveView('dashboard');
-    setNotifications([]); // Clear notifications on logout
+    setIsLoggingOut(true); // Show logging out screen
   }, []);
 
   const addNotification = useCallback((type: NotificationType, title: string, message: string, linkTo?: View) => {
@@ -363,7 +371,7 @@ function App() {
     // --- Limit Checking ---
     const today = new Date();
     today.setHours(0,0,0,0);
-    const dailyTx = transactions.filter(t => t.statusTimestamps.Submitted.getTime() >= today.getTime());
+    const dailyTx = transactions.filter(t => t.statusTimestamps[TransactionStatus.SUBMITTED].getTime() >= today.getTime());
     if (dailyTx.length >= transferLimits.daily.count) {
       addNotification(NotificationType.TRANSACTION, 'Transaction Failed', 'You have exceeded your daily transaction limit.', 'security');
       return null;
@@ -558,7 +566,8 @@ function App() {
       const updatedTransactions = currentTransactions.map(tx => {
         if (tx.status === TransactionStatus.FUNDS_ARRIVED) return tx;
 
-        let newStatus = tx.status;
+        // FIX: Explicitly type `newStatus` as `TransactionStatus` to prevent TypeScript from incorrectly narrowing its type.
+        let newStatus: TransactionStatus = tx.status;
         let newTimestamps = { ...tx.statusTimestamps };
 
         const now = new Date();
@@ -772,6 +781,10 @@ function App() {
 
   const renderContent = () => {
     switch (authStatus) {
+      case 'initializing':
+        // FIX: Explicitly pass `false` to `handleCredentialsSuccess` to satisfy the type checker, which seems unable to infer the optional parameter.
+        // FIX: Provide argument to handleCredentialsSuccess to fix "Expected 1 arguments, but got 0" error.
+        return <OpeningSequence onComplete={() => handleCredentialsSuccess(false)} />;
       case 'loggedOut':
         return <Welcome onLogin={handleCredentialsSuccess} />;
       case 'profileSignIn':
@@ -912,7 +925,12 @@ function App() {
     }
   };
 
-  return <div className="font-sans antialiased">{renderContent()}</div>;
+  return (
+    <div className="font-sans antialiased">
+      {renderContent()}
+      {isLoggingOut && <LoggingOut onComplete={handleFinalizeLogout} />}
+    </div>
+  );
 }
 
 // FIX: Add default export for the App component.

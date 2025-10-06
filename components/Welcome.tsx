@@ -331,8 +331,9 @@ export const Welcome: React.FC<WelcomeProps> = ({ onLogin }) => {
         </footer>
       </div>
       {isLoginModalOpen && (
+        // FIX: Provide argument to onLogin to fix potential "Expected 1 arguments, but got 0" error, consistent with the fix in App.tsx.
         <LoginModal 
-            onLogin={() => onLogin()} 
+            onLogin={() => onLogin(false)} 
             onClose={() => setIsLoginModalOpen(false)}
             onSwitchToCreateAccount={handleOpenCreateAccount} 
         />
