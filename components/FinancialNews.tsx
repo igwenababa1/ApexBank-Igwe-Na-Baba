@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getFinancialNews } from '../services/geminiService';
-import { NewsArticle } from '../types';
-import { SpinnerIcon, InfoIcon, StarIcon } from './Icons';
+import { getFinancialNews, getCountryBankingTip, BankingTipResult } from '../services/geminiService';
+import { NewsArticle, Country } from '../types';
+import { SUPPORTED_COUNTRIES } from '../constants';
+import { SpinnerIcon, InfoIcon, StarIcon, LightBulbIcon } from './Icons';
 
 const NewsArticleCard: React.FC<{ article: NewsArticle }> = ({ article }) => (
     <div className="p-4 rounded-lg shadow-digital-inset">
@@ -40,23 +41,47 @@ const NewsSkeletonLoader: React.FC = () => (
 
 export const FinancialNews: React.FC = () => {
     const [articles, setArticles] = useState<NewsArticle[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isError, setIsError] = useState(false);
+    const [isLoadingNews, setIsLoadingNews] = useState(true);
+    const [isNewsError, setIsNewsError] = useState(false);
+
+    // New state for the banking tip feature
+    const [selectedCountryCode, setSelectedCountryCode] = useState<string>('GB'); // Default to UK
+    const [bankingTip, setBankingTip] = useState<string>('');
+    const [isTipLoading, setIsTipLoading] = useState(true);
+    const [isTipError, setIsTipError] = useState(false);
 
     useEffect(() => {
         const fetchNews = async () => {
-            setIsLoading(true);
-            setIsError(false);
+            setIsLoadingNews(true);
+            setIsNewsError(false);
             const result = await getFinancialNews();
             if (result.isError) {
-                setIsError(true);
+                setIsNewsError(true);
             } else {
                 setArticles(result.articles);
             }
-            setIsLoading(false);
+            setIsLoadingNews(false);
         };
         fetchNews();
     }, []);
+
+    // New useEffect for banking tips
+    useEffect(() => {
+        const fetchTip = async () => {
+            if (!selectedCountryCode) return;
+
+            const country = SUPPORTED_COUNTRIES.find(c => c.code === selectedCountryCode);
+            if (!country) return;
+
+            setIsTipLoading(true);
+            setIsTipError(false);
+            const result: BankingTipResult = await getCountryBankingTip(country.name);
+            setBankingTip(result.tip);
+            setIsTipError(result.isError);
+            setIsTipLoading(false);
+        };
+        fetchTip();
+    }, [selectedCountryCode]);
 
 
     return (
@@ -66,13 +91,13 @@ export const FinancialNews: React.FC = () => {
                     <h2 className="text-xl font-bold text-slate-800">Market Insights & News</h2>
                 </div>
                 <div className="p-6">
-                    {isLoading ? (
+                    {isLoadingNews ? (
                         <div className="space-y-4">
                            <NewsSkeletonLoader />
                            <NewsSkeletonLoader />
                            <NewsSkeletonLoader />
                         </div>
-                    ) : isError ? (
+                    ) : isNewsError ? (
                         <div className="flex items-center space-x-3 text-yellow-700 bg-yellow-100 p-4 rounded-lg shadow-digital-inset">
                             <InfoIcon className="w-6 h-6" />
                             <p>Could not load financial news at this time. Please try again later.</p>
@@ -84,6 +109,43 @@ export const FinancialNews: React.FC = () => {
                             ))}
                         </div>
                     )}
+                </div>
+                
+                {/* NEW "Did You Know?" Section */}
+                <div className="p-6 border-t border-slate-300">
+                    <div className="flex items-center space-x-3 mb-4">
+                        <LightBulbIcon className="w-6 h-6 text-yellow-500" />
+                        <h3 className="text-lg font-bold text-slate-800">Did You Know?</h3>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                        <label htmlFor="country-tip-select" className="text-sm font-medium text-slate-700 flex-shrink-0">
+                            Get transfer tips for:
+                        </label>
+                        <select
+                            id="country-tip-select"
+                            value={selectedCountryCode}
+                            onChange={(e) => setSelectedCountryCode(e.target.value)}
+                            className="w-full sm:w-auto bg-slate-200 border-0 p-2 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400"
+                        >
+                            {SUPPORTED_COUNTRIES.map((country: Country) => (
+                                <option key={country.code} value={country.code}>
+                                    {country.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className={`p-4 rounded-lg flex items-start space-x-3 shadow-digital-inset ${isTipError ? 'bg-yellow-50 text-yellow-800' : 'bg-primary-50 text-primary-800'}`}>
+                        {isTipLoading ? (
+                            <SpinnerIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        ) : (
+                            <InfoIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        )}
+                        <p className="text-sm">
+                            {isTipLoading ? 'Fetching AI-powered tip...' : bankingTip}
+                        </p>
+                    </div>
                 </div>
             </div>
             <div className="lg:col-span-1">

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+// FIX: Import `useMemo` from React to resolve 'Cannot find name' error.
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SendMoneyFlow } from './components/SendMoneyFlow';
@@ -168,7 +169,7 @@ const USER_NAME = "Eleanor Vance";
 const USER_PHONE = "+1-555-012-1234";
 
 function App() {
-  const [authStatus, setAuthStatus] = useState<AuthStatus>('initializing');
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loggedOut');
   const [isNewAccountLogin, setIsNewAccountLogin] = useState(false);
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
@@ -203,28 +204,7 @@ function App() {
   };
 
   const handleEnterDashboard = () => {
-    setAuthStatus('loggedIn');
-    if (isNewAccountLogin) {
-        addNotification(
-            NotificationType.SECURITY,
-            'Welcome to ApexBank!',
-            'Your account has been successfully created. We\'re glad to have you.',
-            'dashboard'
-        );
-        const { subject, body } = generateWelcomeEmail(USER_NAME);
-        sendTransactionalEmail(USER_EMAIL, subject, body);
-        sendSmsNotification(USER_PHONE, generateWelcomeSms(USER_NAME));
-    } else {
-        addNotification(
-            NotificationType.SECURITY,
-            'Successful Sign In',
-            'Your account was accessed from a new device. If this was not you, please contact support.',
-            'security'
-        );
-        const { subject, body } = generateLoginAlertEmail(USER_NAME);
-        sendTransactionalEmail(USER_EMAIL, subject, body);
-        sendSmsNotification(USER_PHONE, generateLoginAlertSms());
-    }
+    setAuthStatus('initializing');
   };
   
   const handleInitiateLogout = () => {
@@ -257,6 +237,32 @@ function App() {
     };
     setNotifications(prev => [newNotification, ...prev]);
   }, []);
+  
+  useEffect(() => {
+    if (authStatus === 'loggedIn') {
+      if (isNewAccountLogin) {
+          addNotification(
+              NotificationType.SECURITY,
+              'Welcome to ApexBank!',
+              'Your account has been successfully created. We\'re glad to have you.',
+              'dashboard'
+          );
+          const { subject, body } = generateWelcomeEmail(USER_NAME);
+          sendTransactionalEmail(USER_EMAIL, subject, body);
+          sendSmsNotification(USER_PHONE, generateWelcomeSms(USER_NAME));
+      } else {
+          addNotification(
+              NotificationType.SECURITY,
+              'Successful Sign In',
+              'Your account was accessed from a new device. If this was not you, please contact support.',
+              'security'
+          );
+          const { subject, body } = generateLoginAlertEmail(USER_NAME);
+          sendTransactionalEmail(USER_EMAIL, subject, body);
+          sendSmsNotification(USER_PHONE, generateLoginAlertSms());
+      }
+    }
+  }, [authStatus, isNewAccountLogin, addNotification]);
 
   const markNotificationsAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -572,7 +578,6 @@ function App() {
       const updatedTransactions = currentTransactions.map(tx => {
         if (tx.status === TransactionStatus.FUNDS_ARRIVED) return tx;
 
-        // FIX: Explicitly type `newStatus` as `TransactionStatus` to prevent TypeScript from incorrectly narrowing its type.
         let newStatus: TransactionStatus = tx.status;
         let newTimestamps = { ...tx.statusTimestamps };
 
@@ -580,294 +585,253 @@ function App() {
         const submittedTime = tx.statusTimestamps[TransactionStatus.SUBMITTED].getTime();
         const timeDiffSeconds = (now.getTime() - submittedTime) / 1000;
 
-        // Progress from SUBMITTED -> CONVERTING after a few seconds
         if (tx.status === TransactionStatus.SUBMITTED && timeDiffSeconds > 5 && !tx.statusTimestamps[TransactionStatus.CONVERTING]) {
           newStatus = TransactionStatus.CONVERTING;
           newTimestamps[TransactionStatus.CONVERTING] = now;
           hasChanged = true;
         }
 
-        // Progress from CONVERTING -> IN_TRANSIT
         if (tx.status === TransactionStatus.CONVERTING && timeDiffSeconds > 15 && !tx.statusTimestamps[TransactionStatus.IN_TRANSIT]) {
           newStatus = TransactionStatus.IN_TRANSIT;
           newTimestamps[TransactionStatus.IN_TRANSIT] = now;
           hasChanged = true;
+
+          if (tx.requiresAuth) {
+            newNotifications.push({
+              id: `notif_auth_${tx.id}`,
+              type: NotificationType.SECURITY,
+              title: 'Action Required: Authorize Transfer',
+              message: `Your transfer to ${tx.recipient.fullName} requires an authorization code to proceed.`,
+              timestamp: now,
+              read: false,
+              linkTo: 'send'
+            });
+            return { ...tx, status: newStatus, statusTimestamps: newTimestamps };
+          }
         }
+        
+        const arrivalTime = tx.estimatedArrival.getTime();
+        if (tx.status === TransactionStatus.IN_TRANSIT && !tx.requiresAuth && now.getTime() >= arrivalTime && !tx.statusTimestamps[TransactionStatus.FUNDS_ARRIVED]) {
+            newStatus = TransactionStatus.FUNDS_ARRIVED;
+            newTimestamps[TransactionStatus.FUNDS_ARRIVED] = now;
+            hasChanged = true;
+            newNotifications.push({
+                id: `notif_arrival_${tx.id}`,
+                type: NotificationType.TRANSACTION,
+                title: 'Funds Arrived!',
+                message: `Your transfer to ${tx.recipient.fullName} has been successfully delivered.`,
+                timestamp: now,
+                read: false,
+                linkTo: 'history'
+            });
 
-        // Progress from IN_TRANSIT -> FUNDS_ARRIVED (simulates a longer delay)
-        if (tx.status === TransactionStatus.IN_TRANSIT && now.getTime() >= tx.estimatedArrival.getTime() && !tx.requiresAuth) {
-          newStatus = TransactionStatus.FUNDS_ARRIVED;
-          newTimestamps[TransactionStatus.FUNDS_ARRIVED] = now;
-          hasChanged = true;
-          // Create notification for funds arrival
-          newNotifications.push({
-            id: `notif_${tx.id}_arrival`,
-            type: NotificationType.TRANSACTION,
-            title: 'Funds Arrived!',
-            message: `Your transfer to ${tx.recipient.fullName} has been successfully delivered.`,
-            timestamp: new Date(),
-            read: false,
-            linkTo: 'history',
-          });
-
-          // Send email for funds arrival
-          const { subject, body } = generateFundsArrivedEmail(tx, USER_NAME);
-          sendTransactionalEmail(USER_EMAIL, subject, body);
+            const { subject, body } = generateFundsArrivedEmail(tx, USER_NAME);
+            sendTransactionalEmail(USER_EMAIL, subject, body);
         }
 
         return { ...tx, status: newStatus, statusTimestamps: newTimestamps };
       });
 
       if (hasChanged) {
-        // Add new notifications if any were created
         if (newNotifications.length > 0) {
-          setNotifications(prev => [...newNotifications, ...prev.filter(n => !newNotifications.some(nn => nn.id === n.id))]);
+            setNotifications(prev => [...newNotifications, ...prev.filter(p => !newNotifications.find(n => n.id === p.id))]);
         }
         return updatedTransactions;
       }
       return currentTransactions;
     });
-  }, [USER_NAME]);
+  }, []);
 
   useEffect(() => {
-    const interval = setInterval(updateTransactionStatuses, 2000); // Check every 2 seconds
+    const interval = setInterval(() => {
+      updateTransactionStatuses();
+    }, 2000);
+
     return () => clearInterval(interval);
   }, [updateTransactionStatuses]);
-  
-  const cryptoPortfolioValue = cryptoHoldings.reduce((total, holding) => {
-    const asset = cryptoAssets.find(a => a.id === holding.assetId);
-    return total + (asset ? holding.amount * asset.price : 0);
-  }, 0);
 
-  const onBuyCrypto = (assetId: string, usdAmount: number, assetPrice: number): boolean => {
-    const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
-    if (!checkingAccount || checkingAccount.balance < usdAmount) {
-      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient funds in your checking account.', 'accounts');
-      return false;
-    }
-
-    const fee = usdAmount * CRYPTO_TRADE_FEE_PERCENT;
-    const usdSpent = usdAmount + fee;
-    const cryptoReceived = usdAmount / assetPrice;
-
-    // Deduct from checking
-    setAccounts(prev => prev.map(acc => acc.id === checkingAccount.id ? { ...acc, balance: acc.balance - usdSpent } : acc));
-
-    // Update holdings
-    setCryptoHoldings(prev => {
-      const existing = prev.find(h => h.assetId === assetId);
-      if (existing) {
-        // Update avg buy price
-        const newTotalAmount = existing.amount + cryptoReceived;
-        const newAvgPrice = ((existing.avgBuyPrice * existing.amount) + (assetPrice * cryptoReceived)) / newTotalAmount;
-        return prev.map(h => h.assetId === assetId ? { ...h, amount: newTotalAmount, avgBuyPrice: newAvgPrice } : h);
-      } else {
-        return [...prev, { assetId, amount: cryptoReceived, avgBuyPrice: assetPrice }];
-      }
-    });
-
-    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully bought ${cryptoReceived.toFixed(6)} ${assetId.toUpperCase()}.`, 'crypto');
-    return true;
+  const handleUpdateSecuritySettings = (newSettings: Partial<SecuritySettings>) => {
+      setSecuritySettings(prev => ({ ...prev, ...newSettings }));
+      const [key, value] = Object.entries(newSettings)[0];
+      const settingName = key === 'mfaEnabled' ? '2FA' : 'Biometrics';
+      addNotification(
+          NotificationType.SECURITY,
+          `Security Setting Updated`,
+          `${settingName} has been ${value ? 'enabled' : 'disabled'}.`,
+          'security'
+      );
   };
   
-  const onSellCrypto = (assetId: string, cryptoAmount: number, assetPrice: number): boolean => {
-    const holding = cryptoHoldings.find(h => h.assetId === assetId);
-    if (!holding || holding.amount < cryptoAmount) {
-      addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient crypto balance.', 'crypto');
-      return false;
-    }
-
-    const usdReceived = cryptoAmount * assetPrice;
-    const fee = usdReceived * CRYPTO_TRADE_FEE_PERCENT;
-    const usdCredited = usdReceived - fee;
-    
-    // Add to checking account
-    setAccounts(prev => prev.map(acc => acc.type === 'Global Checking' ? { ...acc, balance: acc.balance + usdCredited } : acc));
-
-    // Update holdings
-    setCryptoHoldings(prev => prev.map(h => h.assetId === assetId ? { ...h, amount: h.amount - cryptoAmount } : h).filter(h => h.amount > 0.000001));
-
-    addNotification(NotificationType.CRYPTO, 'Trade Executed', `Successfully sold ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()}.`, 'crypto');
-    return true;
-  };
-
-  const addTravelPlan = (country: Country, startDate: Date, endDate: Date) => {
-    const newPlan: TravelPlan = {
-      id: `travel_${Date.now()}`,
-      country,
-      startDate,
-      endDate,
-      status: new Date() >= startDate && new Date() <= endDate ? TravelPlanStatus.ACTIVE : (new Date() < startDate ? TravelPlanStatus.UPCOMING : TravelPlanStatus.COMPLETED)
-    };
-    setTravelPlans(prev => [...prev, newPlan].sort((a,b) => a.startDate.getTime() - b.startDate.getTime()));
-    addNotification(NotificationType.TRAVEL, "Travel Plan Added", `Your trip to ${country.name} has been successfully registered.`, 'checkin');
-  };
-
-  const handleUpdateTheme = (theme: PlatformTheme) => {
-    setPlatformSettings(prev => ({...prev, theme}));
-    const root = document.documentElement;
-    const colors = THEME_COLORS[theme];
-    for (const [key, value] of Object.entries(colors)) {
-        root.style.setProperty(`--color-primary-${key}`, value);
-    }
-  };
-
-  const handleUpdateSpendingLimits = (limits: SpendingLimit[]) => {
-    setAppleCardDetails(prev => ({...prev, spendingLimits: limits}));
-    addNotification(NotificationType.CARD, 'Spending Limits Updated', 'Your Apple Card spending limits have been successfully updated.', 'services');
+  const handleRevokeDevice = (deviceId: string) => {
+    setTrustedDevices(prev => prev.filter(d => d.id !== deviceId));
+    addNotification(
+        NotificationType.SECURITY,
+        'Device Access Revoked',
+        `Access for a trusted device has been revoked.`,
+        'security'
+    );
   };
   
-  const handleUpdateTransactionCategory = (transactionId: string, category: SpendingCategory) => {
-    setAppleCardTransactions(prev => prev.map(tx => tx.id === transactionId ? {...tx, category} : tx));
-  };
-  
-  const inProgressTransaction = transactions.find(tx => tx.status !== TransactionStatus.FUNDS_ARRIVED);
-
-  const handleNotificationClick = (view: View) => {
-    setActiveView(view);
-  };
-
-  const addTask = (text: string, dueDate?: Date) => {
-    const newTask: Task = {
-      id: `task_${Date.now()}`,
-      text,
-      completed: false,
-      dueDate,
-    };
-    setTasks(prev => [newTask, ...prev]);
-    addNotification(NotificationType.TASK, 'Task Added', `New task "${text}" created.`, 'tasks');
-  };
-
-  const toggleTask = (taskId: string) => {
-    setTasks(prev => prev.map(task => {
-        if (task.id === taskId) {
-            if (!task.completed) {
-                addNotification(NotificationType.TASK, 'Task Completed!', `You've completed "${task.text}".`, 'tasks');
-            }
-            return { ...task, completed: !task.completed };
-        }
-        return task;
-    }));
-  };
-
-  const deleteTask = (taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
-    addNotification(NotificationType.TASK, 'Task Deleted', 'A task has been removed from your list.', 'tasks');
-  };
-  
-  const handleBookFlight = (booking: Omit<FlightBooking, 'id' | 'bookingDate' | 'status'>, sourceAccountId: string): boolean => {
-    const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
-    if (!sourceAccount || sourceAccount.balance < booking.totalPrice) {
-      addNotification(NotificationType.TRANSACTION, 'Booking Failed', 'Insufficient funds for this flight booking.', 'flights');
-      return false;
-    }
-    
-    // Deduct amount
-    setAccounts(prev => prev.map(acc => acc.id === sourceAccountId ? { ...acc, balance: acc.balance - booking.totalPrice } : acc));
-    
-    // Create booking record
-    const newBooking: FlightBooking = {
-      ...booking,
-      id: `book_${Date.now()}`,
-      bookingDate: new Date(),
-      status: 'Confirmed'
-    };
-    setFlightBookings(prev => [newBooking, ...prev]);
-
-    // Create transaction record
-    const newTransaction: Transaction = {
-      id: `txn_flight_${Date.now()}`,
-      accountId: sourceAccountId,
-      recipient: { ...SELF_RECIPIENT, fullName: booking.flight.airline, bankName: 'Flight Booking' },
-      sendAmount: booking.totalPrice,
-      receiveAmount: booking.totalPrice,
-      fee: 0,
-      exchangeRate: 1,
-      status: TransactionStatus.FUNDS_ARRIVED,
-      estimatedArrival: new Date(),
-      statusTimestamps: { [TransactionStatus.SUBMITTED]: new Date(), [TransactionStatus.FUNDS_ARRIVED]: new Date() },
-      description: `Flight ${booking.flight.flightNumber} to ${booking.flight.to.code}`,
-      type: 'debit',
-      purpose: 'Travel',
-    };
-    setTransactions(prev => [newTransaction, ...prev]);
-
-    addNotification(NotificationType.TRAVEL, 'Flight Booked!', `Your flight to ${booking.flight.to.city} is confirmed.`, 'flights');
-    return true;
-  };
-
-  const handlePayUtility = (billId: string, sourceAccountId: string): boolean => {
-    const bill = utilityBills.find(b => b.id === billId);
-    const biller = utilityBillers.find(b => b.id === bill?.billerId);
-    const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
-
-    if (!bill || !biller || !sourceAccount || sourceAccount.balance < bill.amount) {
-      addNotification(NotificationType.TRANSACTION, 'Payment Failed', 'Insufficient funds to pay this bill.', 'utilities');
-      return false;
-    }
-
-    // Deduct amount
-    setAccounts(prev => prev.map(acc => acc.id === sourceAccountId ? { ...acc, balance: acc.balance - bill.amount } : acc));
-    
-    // Mark as paid
-    setUtilityBills(prev => prev.map(b => b.id === billId ? { ...b, isPaid: true } : b));
-    
-    // Create transaction record
-     const newTransaction: Transaction = {
-      id: `txn_util_${Date.now()}`,
-      accountId: sourceAccountId,
-      recipient: { ...SELF_RECIPIENT, fullName: biller.name, bankName: 'Utility Payment' },
-      sendAmount: bill.amount,
-      receiveAmount: bill.amount,
-      fee: 0,
-      exchangeRate: 1,
-      status: TransactionStatus.FUNDS_ARRIVED,
-      estimatedArrival: new Date(),
-      statusTimestamps: { [TransactionStatus.SUBMITTED]: new Date(), [TransactionStatus.FUNDS_ARRIVED]: new Date() },
-      description: `Bill payment to ${biller.name}`,
-      type: 'debit',
-      purpose: 'Bill Payment',
-    };
-    setTransactions(prev => [newTransaction, ...prev]);
-    
-    addNotification(NotificationType.TRANSACTION, 'Bill Paid', `Your payment to ${biller.name} was successful.`, 'utilities');
-    return true;
-  };
-
-
   useEffect(() => {
-    handleUpdateTheme(platformSettings.theme);
+    const root = document.documentElement;
+    const theme = THEME_COLORS[platformSettings.theme];
+    for (const [key, value] of Object.entries(theme)) {
+      // FIX: Cast `value` to string to resolve 'Argument of type 'unknown' is not assignable to parameter of type 'string'' error.
+      // This is necessary due to a strict TypeScript configuration for Object.entries.
+      root.style.setProperty(`--color-primary-${key}`, value as string);
+    }
   }, [platformSettings.theme]);
   
   const resetInactivityTimer = useCallback(() => {
     clearTimeout(inactivityTimerRef.current);
     setShowInactivityModal(false);
-    if (authStatus === 'loggedIn') {
-      inactivityTimerRef.current = window.setTimeout(() => {
-        setShowInactivityModal(true);
-      }, INACTIVITY_WARNING_TIMEOUT);
-    }
-  }, [authStatus]);
+    inactivityTimerRef.current = window.setTimeout(() => {
+      setShowInactivityModal(true);
+    }, INACTIVITY_WARNING_TIMEOUT);
+  }, []);
 
   useEffect(() => {
-    resetInactivityTimer();
-    window.addEventListener('mousemove', resetInactivityTimer);
-    window.addEventListener('keydown', resetInactivityTimer);
-    window.addEventListener('click', resetInactivityTimer);
+    if (authStatus === 'loggedIn') {
+      const events = ['mousemove', 'keydown', 'mousedown', 'touchstart'];
+      events.forEach(event => window.addEventListener(event, resetInactivityTimer));
+      resetInactivityTimer();
 
-    return () => {
-      clearTimeout(inactivityTimerRef.current);
-      window.removeEventListener('mousemove', resetInactivityTimer);
-      window.removeEventListener('keydown', resetInactivityTimer);
-      window.removeEventListener('click', resetInactivityTimer);
-    };
-  }, [resetInactivityTimer]);
+      return () => {
+        events.forEach(event => window.removeEventListener(event, resetInactivityTimer));
+        clearTimeout(inactivityTimerRef.current);
+      };
+    }
+  }, [authStatus, resetInactivityTimer]);
+
+  const handleStayLoggedIn = () => {
+    setShowInactivityModal(false);
+    resetInactivityTimer();
+  };
   
+  const cryptoPortfolioValue = useMemo(() => {
+    return cryptoHoldings.reduce((total, holding) => {
+      const asset = cryptoAssets.find(a => a.id === holding.assetId);
+      return total + (asset ? holding.amount * asset.price : 0);
+    }, 0);
+  }, [cryptoHoldings, cryptoAssets]);
+
+  const handleBuyCrypto = (assetId: string, usdAmount: number, assetPrice: number): boolean => {
+    const checking = accounts.find(a => a.type === 'Global Checking');
+    if (!checking || checking.balance < usdAmount) {
+        addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient funds in your checking account.', 'crypto');
+        return false;
+    }
+    
+    setAccounts(prev => prev.map(acc => acc.id === checking.id ? { ...acc, balance: acc.balance - usdAmount } : acc));
+    
+    const cryptoAmount = usdAmount / assetPrice;
+    setCryptoHoldings(prev => {
+        const existingHolding = prev.find(h => h.assetId === assetId);
+        if (existingHolding) {
+            const totalAmount = existingHolding.amount + cryptoAmount;
+            const totalCost = (existingHolding.avgBuyPrice * existingHolding.amount) + usdAmount;
+            const newAvgPrice = totalCost / totalAmount;
+            return prev.map(h => h.assetId === assetId ? { ...h, amount: totalAmount, avgBuyPrice: newAvgPrice } : h);
+        } else {
+            return [...prev, { assetId, amount: cryptoAmount, avgBuyPrice: assetPrice }];
+        }
+    });
+
+    addNotification(NotificationType.CRYPTO, 'Trade Successful', `You purchased ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()}.`, 'crypto');
+    return true;
+  };
+  
+  const handleSellCrypto = (assetId: string, cryptoAmount: number, assetPrice: number): boolean => {
+    const holding = cryptoHoldings.find(h => h.assetId === assetId);
+    if (!holding || holding.amount < cryptoAmount) {
+        addNotification(NotificationType.CRYPTO, 'Trade Failed', 'Insufficient asset balance.', 'crypto');
+        return false;
+    }
+    
+    const usdAmount = cryptoAmount * assetPrice;
+    const checking = accounts.find(a => a.type === 'Global Checking');
+    if (!checking) return false;
+    setAccounts(prev => prev.map(acc => acc.id === checking.id ? { ...acc, balance: acc.balance + usdAmount } : acc));
+
+    setCryptoHoldings(prev => prev.map(h => h.assetId === assetId ? { ...h, amount: h.amount - cryptoAmount } : h).filter(h => h.amount > 0.000001));
+
+    addNotification(NotificationType.CRYPTO, 'Trade Successful', `You sold ${cryptoAmount.toFixed(6)} ${assetId.toUpperCase()} for ${usdAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}.`, 'crypto');
+    return true;
+  };
+
+  const handleUpdateSpendingLimits = (newLimits: SpendingLimit[]) => {
+      setAppleCardDetails(prev => ({...prev, spendingLimits: newLimits}));
+      addNotification(NotificationType.CARD, 'Spending Limits Updated', 'Your Apple Card spending limits have been successfully updated.', 'services');
+  };
+  
+  const handleUpdateTransactionCategory = (transactionId: string, newCategory: SpendingCategory) => {
+    setAppleCardTransactions(prev => prev.map(tx => tx.id === transactionId ? { ...tx, category: newCategory } : tx));
+  };
+  
+  const handleAddTravelPlan = (country: Country, startDate: Date, endDate: Date) => {
+      const newPlan: TravelPlan = {
+          id: `travel_${Date.now()}`,
+          country,
+          startDate,
+          endDate,
+          status: TravelPlanStatus.UPCOMING
+      };
+      setTravelPlans(prev => [...prev, newPlan]);
+      addNotification(NotificationType.TRAVEL, 'Travel Plan Added', `Your trip to ${country.name} has been registered.`, 'checkin');
+  };
+  
+  const handleAddTask = (text: string, dueDate?: Date) => {
+    const newTask: Task = { id: `task_${Date.now()}`, text, completed: false, dueDate };
+    setTasks(prev => [newTask, ...prev]);
+  };
+  const handleToggleTask = (taskId: string) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
+  };
+  const handleDeleteTask = (taskId: string) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  };
+  
+  const handleBookFlight = (booking: Omit<FlightBooking, 'id' | 'bookingDate' | 'status'>, sourceAccountId: string): boolean => {
+      const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
+      if (!sourceAccount || sourceAccount.balance < booking.totalPrice) {
+          addNotification(NotificationType.TRAVEL, 'Booking Failed', 'Insufficient funds to book this flight.', 'flights');
+          return false;
+      }
+      setAccounts(prev => prev.map(acc => acc.id === sourceAccountId ? { ...acc, balance: acc.balance - booking.totalPrice } : acc));
+      
+      const newBooking: FlightBooking = {
+          ...booking,
+          id: `book_${Date.now()}`,
+          bookingDate: new Date(),
+          status: 'Confirmed'
+      };
+      setFlightBookings(prev => [...prev, newBooking]);
+      addNotification(NotificationType.TRAVEL, 'Flight Booked!', `Your flight to ${booking.flight.to.city} is confirmed.`, 'flights');
+      return true;
+  };
+  
+  const handlePayUtilityBill = (billId: string, sourceAccountId: string): boolean => {
+      const bill = utilityBills.find(b => b.id === billId);
+      const sourceAccount = accounts.find(acc => acc.id === sourceAccountId);
+      
+      if (!bill || !sourceAccount || sourceAccount.balance < bill.amount) {
+          addNotification(NotificationType.TRANSACTION, 'Payment Failed', 'Insufficient funds to pay this bill.', 'utilities');
+          return false;
+      }
+      
+      setAccounts(prev => prev.map(acc => acc.id === sourceAccountId ? { ...acc, balance: acc.balance - bill.amount } : acc));
+      
+      setUtilityBills(prev => prev.map(b => b.id === billId ? { ...b, isPaid: true } : b));
+      
+      const biller = utilityBillers.find(b => b.id === bill.billerId);
+      addNotification(NotificationType.TRANSACTION, 'Bill Paid', `Your payment to ${biller?.name} was successful.`, 'utilities');
+      return true;
+  };
 
   const renderContent = () => {
     switch (authStatus) {
       case 'initializing':
-        return <OpeningSequence onComplete={() => setAuthStatus('intro')} />;
+        return <OpeningSequence onComplete={() => setAuthStatus('loggedIn')} />;
       case 'intro':
         return <IntroSequence onComplete={() => setAuthStatus('loggedOut')} />;
       case 'loggedOut':
@@ -875,125 +839,91 @@ function App() {
       case 'profileSignIn':
         return <ProfileSignIn user={USER_PROFILE} onEnterDashboard={handleEnterDashboard} />;
       case 'loggedIn':
-        const renderActiveView = () => {
-          switch (activeView) {
-            case 'dashboard':
-              return <Dashboard 
-                        accounts={accounts} 
-                        transactions={transactions} 
-                        setActiveView={setActiveView} 
-                        recipients={recipients}
-                        createTransaction={createTransaction}
-                        cryptoPortfolioValue={cryptoPortfolioValue}
-                        travelPlans={travelPlans}
-                     />;
-            case 'send':
-              return <SendMoneyFlow 
-                        recipients={recipients}
-                        accounts={accounts}
-                        createTransaction={createTransaction}
-                        transactions={transactions}
-                        securitySettings={securitySettings}
-                        hapticsEnabled={platformSettings.hapticsEnabled}
-                        onAuthorizeTransaction={handleAuthorizeTransaction}
-                     />;
-            case 'recipients':
-              return <Recipients recipients={recipients} addRecipient={addRecipient} />;
-            case 'history':
-              return <ActivityLog transactions={transactions} />;
-            case 'security':
-              return <Security 
-                        transferLimits={transferLimits} 
-                        onUpdateLimits={setTransferLimits}
-                        verificationLevel={verificationLevel}
-                        onVerificationComplete={setVerificationLevel}
-                        securitySettings={securitySettings}
-                        onUpdateSecuritySettings={(settings) => setSecuritySettings(prev => ({...prev, ...settings}))}
-                        trustedDevices={trustedDevices}
-                        onRevokeDevice={(id) => setTrustedDevices(prev => prev.filter(d => d.id !== id))}
-                     />;
-            case 'cards':
-              return <CardManagement 
-                        cards={cards}
-                        transactions={INITIAL_CARD_TRANSACTIONS} /* Using initial for now */
-                        onToggleFreeze={handleToggleFreeze}
-                        onAddCard={addCard}
-                        accountBalance={accounts.find(acc => acc.type === 'Global Checking')?.balance || 0}
-                        onAddFunds={addFunds}
-                     />;
-            case 'insurance':
-                return <Insurance />;
-            case 'loans':
-                return <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification} />;
-            case 'support':
-                return <Support />;
-            case 'accounts':
-                return <Accounts 
-                            accounts={accounts} 
-                            transactions={transactions} 
-                            verificationLevel={verificationLevel}
-                            onUpdateAccountNickname={handleUpdateAccountNickname}
-                       />;
-            case 'crypto':
-              return <CryptoDashboard
-                        cryptoAssets={cryptoAssets}
-                        setCryptoAssets={setCryptoAssets}
-                        holdings={cryptoHoldings}
-                        checkingAccount={accounts.find(acc => acc.type === 'Global Checking')}
-                        onBuy={onBuyCrypto}
-                        onSell={onSellCrypto}
-                     />;
-            case 'services':
-              return <ServicesDashboard 
-                        subscriptions={subscriptions}
-                        appleCardDetails={appleCardDetails}
-                        appleCardTransactions={appleCardTransactions}
-                        onPaySubscription={handlePaySubscription}
-                        onUpdateSpendingLimits={handleUpdateSpendingLimits}
-                        onUpdateTransactionCategory={handleUpdateTransactionCategory}
-                     />;
-            case 'checkin':
-              return <TravelCheckIn travelPlans={travelPlans} addTravelPlan={addTravelPlan} />;
-            case 'platform':
-              return <PlatformFeatures settings={platformSettings} onUpdateSettings={(s) => setPlatformSettings(prev => ({...prev, ...s}))} />;
-            case 'tasks':
-              return <Tasks tasks={tasks} addTask={addTask} toggleTask={toggleTask} deleteTask={deleteTask} />;
-            case 'flights':
-              return <Flights bookings={flightBookings} onBookFlight={handleBookFlight} accounts={accounts} setActiveView={setActiveView} />;
-            case 'utilities':
-              return <Utilities bills={utilityBills} billers={utilityBillers} onPayBill={handlePayUtility} accounts={accounts} setActiveView={setActiveView} />;
-            default:
-              return <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
-          }
-        };
-
-        if (isLoggingOut) {
-          return <LoggingOut onComplete={handleFinalizeLogout} />;
+        const checkingAccount = accounts.find(acc => acc.type === 'Global Checking');
+        const currentBalance = checkingAccount ? checkingAccount.balance : 0;
+        
+        let viewComponent;
+        switch (activeView) {
+          case 'dashboard':
+            viewComponent = <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
+            break;
+          case 'send':
+            viewComponent = <SendMoneyFlow recipients={recipients} accounts={accounts} createTransaction={createTransaction} transactions={transactions} securitySettings={securitySettings} hapticsEnabled={platformSettings.hapticsEnabled} onAuthorizeTransaction={handleAuthorizeTransaction} />;
+            break;
+          case 'recipients':
+            viewComponent = <Recipients recipients={recipients} addRecipient={addRecipient} />;
+            break;
+          case 'history':
+            viewComponent = <ActivityLog transactions={transactions} />;
+            break;
+          case 'security':
+            viewComponent = <Security transferLimits={transferLimits} onUpdateLimits={setTransferLimits} verificationLevel={verificationLevel} onVerificationComplete={setVerificationLevel} securitySettings={securitySettings} onUpdateSecuritySettings={handleUpdateSecuritySettings} trustedDevices={trustedDevices} onRevokeDevice={handleRevokeDevice} />;
+            break;
+          case 'cards':
+            viewComponent = <CardManagement cards={cards} transactions={INITIAL_CARD_TRANSACTIONS} onToggleFreeze={handleToggleFreeze} onAddCard={addCard} accountBalance={currentBalance} onAddFunds={addFunds} />;
+            break;
+          case 'insurance':
+            viewComponent = <Insurance />;
+            break;
+          case 'loans':
+            viewComponent = <Loans loanApplications={loanApplications} addLoanApplication={addLoanApplication} addNotification={addNotification} />;
+            break;
+          case 'support':
+            viewComponent = <Support />;
+            break;
+          case 'accounts':
+            viewComponent = <Accounts accounts={accounts} transactions={transactions} verificationLevel={verificationLevel} onUpdateAccountNickname={handleUpdateAccountNickname} />;
+            break;
+          case 'crypto':
+            viewComponent = <CryptoDashboard cryptoAssets={cryptoAssets} setCryptoAssets={setCryptoAssets} holdings={cryptoHoldings} checkingAccount={checkingAccount} onBuy={handleBuyCrypto} onSell={handleSellCrypto} />;
+            break;
+          case 'services':
+            viewComponent = <ServicesDashboard subscriptions={subscriptions} onPaySubscription={handlePaySubscription} appleCardDetails={appleCardDetails} appleCardTransactions={appleCardTransactions} onUpdateSpendingLimits={handleUpdateSpendingLimits} onUpdateTransactionCategory={handleUpdateTransactionCategory} />;
+            break;
+          case 'checkin':
+            viewComponent = <TravelCheckIn travelPlans={travelPlans} addTravelPlan={handleAddTravelPlan} />;
+            break;
+          case 'platform':
+            viewComponent = <PlatformFeatures settings={platformSettings} onUpdateSettings={setPlatformSettings} />;
+            break;
+          case 'tasks':
+            viewComponent = <Tasks tasks={tasks} addTask={handleAddTask} toggleTask={handleToggleTask} deleteTask={handleDeleteTask} />;
+            break;
+          case 'flights':
+            viewComponent = <Flights bookings={flightBookings} onBookFlight={handleBookFlight} accounts={accounts} setActiveView={setActiveView} />;
+            break;
+          case 'utilities':
+            viewComponent = <Utilities bills={utilityBills} billers={utilityBillers} onPayBill={handlePayUtilityBill} accounts={accounts} setActiveView={setActiveView} />;
+            break;
+          default:
+            viewComponent = <Dashboard accounts={accounts} transactions={transactions} setActiveView={setActiveView} recipients={recipients} createTransaction={createTransaction} cryptoPortfolioValue={cryptoPortfolioValue} travelPlans={travelPlans} />;
         }
-
         return (
           <div className="min-h-screen bg-slate-200">
-            <Header 
-              activeView={activeView}
-              setActiveView={setActiveView}
-              onLogout={handleInitiateLogout}
-              notifications={notifications}
-              onMarkNotificationsAsRead={markNotificationsAsRead}
-              onNotificationClick={handleNotificationClick}
-            />
+            <Header activeView={activeView} setActiveView={setActiveView} onLogout={handleInitiateLogout} notifications={notifications} onMarkNotificationsAsRead={markNotificationsAsRead} onNotificationClick={setActiveView} />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              {renderActiveView()}
+              {viewComponent}
             </main>
-            <DynamicIslandSimulator transaction={inProgressTransaction || null} />
+            <DynamicIslandSimulator transaction={transactions.find(t => t.status !== TransactionStatus.FUNDS_ARRIVED) || null} />
             <BankingChat />
-            {isLogoutModalOpen && <LogoutConfirmationModal onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleConfirmLogout} />}
-            {showInactivityModal && <InactivityModal onStayLoggedIn={resetInactivityTimer} onLogout={handleConfirmLogout} countdownStart={INACTIVITY_MODAL_COUNTDOWN} />}
           </div>
         );
+      default:
+        return null;
     }
   };
+  
+  if (isLoggingOut) {
+    return <LoggingOut onComplete={handleFinalizeLogout} />;
+  }
 
-  return renderContent();
+  return (
+    <>
+      {renderContent()}
+      {isLogoutModalOpen && <LogoutConfirmationModal onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleConfirmLogout} />}
+      {showInactivityModal && <InactivityModal onStayLoggedIn={handleStayLoggedIn} onLogout={handleConfirmLogout} countdownStart={INACTIVITY_MODAL_COUNTDOWN} />}
+    </>
+  );
 }
 
 export default App;
