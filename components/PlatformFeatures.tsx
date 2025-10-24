@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import { PlatformSettings, PlatformTheme } from '../types';
 // FIX: Import SpinnerIcon to resolve missing component error.
@@ -82,20 +84,3 @@ export const PlatformFeatures: React.FC<PlatformFeaturesProps> = ({ settings, on
                         <div className="p-4 bg-black rounded-3xl w-64 mx-auto flex items-center justify-between shadow-lg">
                             <div className="flex items-center space-x-2">
                                 <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold text-white">JD</div>
-                                <div className="text-xs text-white">
-                                    <p className="font-semibold">Sending...</p>
-                                    <p className="text-gray-400">$500.00</p>
-                                </div>
-                            </div>
-                            <div className="w-8 h-8 text-white"><SpinnerIcon /></div>
-                        </div>
-                    </div>
-                     <div>
-                        <h4 className="font-semibold text-slate-700">Apple Wallet</h4>
-                        <p className="text-sm text-slate-600 mb-3">Add your ApexBank card to Apple Wallet from the 'Cards' screen for easy, secure payments.</p>
-                    </div>
-                 </div>
-            </div>
-        </div>
-    );
-};

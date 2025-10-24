@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-    ApexBankLogo, LogoutIcon, BellIcon, MenuIcon
+    ApexBankLogo, LogoutIcon, BellIcon, MenuIcon, GlobeAmericasIcon, BankIcon
 } from './Icons';
-import { Notification, View } from '../types';
+import { Notification, View, BalanceDisplayMode } from '../types';
 import { NotificationsPanel } from './NotificationsPanel';
 import { MegaMenu } from './MegaMenu'; // Import the new menu
 
@@ -13,9 +13,11 @@ interface HeaderProps {
   notifications: Notification[];
   onMarkNotificationsAsRead: () => void;
   onNotificationClick: (view: View) => void;
+  balanceDisplayMode: BalanceDisplayMode;
+  setBalanceDisplayMode: (mode: BalanceDisplayMode) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLogout, notifications, onMarkNotificationsAsRead, onNotificationClick }) => {
+export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLogout, notifications, onMarkNotificationsAsRead, onNotificationClick, balanceDisplayMode, setBalanceDisplayMode }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for the new menu
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -28,6 +30,10 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
           onMarkNotificationsAsRead();
       }
   }
+
+  const toggleBalanceDisplay = () => {
+      setBalanceDisplayMode(balanceDisplayMode === 'global' ? 'domestic' : 'global');
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                 className="flex items-center space-x-2 px-4 py-2 rounded-lg text-slate-600 hover:text-primary shadow-digital active:shadow-digital-inset transition-all"
                 aria-label="Open menu"
               >
-                <MenuIcon className="w-6 h-6" />
+                <MenuIcon className="w-6 h-6" aria-hidden="true" />
                 <span className="font-semibold hidden sm:inline">Menu</span>
               </button>
               
@@ -62,6 +68,16 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                 <ApexBankLogo />
                 <h1 className="text-2xl font-bold text-slate-800 hidden md:block">ApexBank</h1>
               </div>
+              
+              {/* Balance Toggle Button */}
+              <button
+                onClick={toggleBalanceDisplay}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-slate-600 hover:text-primary shadow-digital active:shadow-digital-inset transition-all"
+                aria-label={`Switch to ${balanceDisplayMode === 'global' ? 'domestic' : 'global'} balance view`}
+              >
+                {balanceDisplayMode === 'global' ? <GlobeAmericasIcon className="w-6 h-6" aria-hidden="true" /> : <BankIcon className="w-6 h-6" aria-hidden="true" />}
+                <span className="font-semibold hidden sm:inline capitalize">{balanceDisplayMode}</span>
+              </button>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -71,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                     className="p-2 rounded-full text-slate-600 hover:text-primary transition-all duration-300 shadow-digital active:shadow-digital-inset"
                     aria-label="View notifications"
                   >
-                      <BellIcon className="w-6 h-6"/>
+                      <BellIcon className="w-6 h-6" aria-hidden="true"/>
                       {unreadCount > 0 && (
                           <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center transform translate-x-1/3 -translate-y-1/3">
                               {unreadCount > 9 ? '9+' : unreadCount}
@@ -86,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onLog
                 className="flex items-center justify-center space-x-2 text-slate-600 hover:text-primary transition-all duration-300 px-4 py-2 rounded-lg shadow-digital active:shadow-digital-inset"
                 aria-label="Logout"
               >
-                <LogoutIcon className="w-5 h-5" />
+                <LogoutIcon className="w-5 h-5" aria-hidden="true" />
                 <span className="text-sm font-medium hidden sm:inline">Logout</span>
               </button>
             </div>

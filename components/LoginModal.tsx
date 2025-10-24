@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { ApexBankLogo, FingerprintIcon, SpinnerIcon, ShieldCheckIcon, DevicePhoneMobileIcon, EnvelopeIcon, CheckCircleIcon, FaceIdIcon } from './Icons';
 import { 
@@ -12,18 +10,19 @@ import {
 interface LoginModalProps {
   onClose: () => void;
   onLogin: () => void;
-  onSwitchToCreateAccount: () => void;
 }
 
 type LoginStep = 'credentials' | 'securityCheck' | 'preMfaWarning' | 'mfa';
+type ModalMode = 'login' | 'reset' | 'reset_confirmation';
 
-const USER_EMAIL = "eleanor.vance@apexbank.com";
-const USER_NAME = "Eleanor Vance";
+const USER_EMAIL = "randy.m.chitwood@apexbank.com";
+const USER_NAME = "Randy M. Chitwood";
 const USER_PHONE = "+1-555-012-1234";
 const RESEND_COOLDOWN_SECONDS = 30;
 
-export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwitchToCreateAccount }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
   const [step, setStep] = useState<LoginStep>('credentials');
+  const [mode, setMode] = useState<ModalMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
@@ -145,6 +144,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwit
     setStep('securityCheck');
   };
 
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!email) {
+        setError('Please enter your email address.');
+        return;
+    }
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+        setIsLoading(false);
+        setMode('reset_confirmation');
+    }, 1000);
+  };
+
   const handleBiometricLogin = async () => {
     if (!isBiometricSupported) {
         setError("Biometric authentication is not supported on this browser or device.");
@@ -215,6 +229,42 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwit
   };
 
   const renderContent = () => {
+    if (mode === 'reset') {
+      return (
+        <>
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-slate-800">Reset Password</h2>
+            <p className="text-slate-500 text-sm">Enter your email to receive a password reset link.</p>
+          </div>
+          <form onSubmit={handlePasswordReset} className="space-y-4">
+            <div>
+              <label htmlFor="email-reset" className="block text-sm font-medium text-slate-700">Email Address</label>
+              <input type="email" id="email-reset" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full bg-slate-200 p-3 rounded-md shadow-digital-inset" required />
+            </div>
+            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+            <button type="submit" disabled={isLoading} className="w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white bg-primary shadow-md hover:shadow-lg disabled:opacity-50">
+              {isLoading ? <SpinnerIcon className="w-5 h-5"/> : 'Send Reset Link'}
+            </button>
+          </form>
+          <div className="mt-6 text-center text-sm">
+            <button onClick={() => setMode('login')} className="font-medium text-primary hover:underline">Back to Sign In</button>
+          </div>
+        </>
+      );
+    }
+    if (mode === 'reset_confirmation') {
+      return (
+        <div className="text-center">
+            <EnvelopeIcon className="w-12 h-12 text-primary mx-auto mb-4"/>
+            <h2 className="text-2xl font-bold text-slate-800">Check Your Email</h2>
+            <p className="text-slate-600 my-4">A password reset link has been sent to <strong>{email}</strong>. Please follow the instructions in the email to reset your password.</p>
+            <button onClick={() => setMode('login')} className="w-full py-2 px-4 rounded-md text-sm font-medium text-white bg-primary shadow-md">
+                Back to Sign In
+            </button>
+        </div>
+      );
+    }
+
     switch(step) {
       case 'securityCheck':
         return (
@@ -323,7 +373,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwit
                 <input type="text" id="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400" required placeholder="Email or Phone Number" />
               </div>
               <div>
-                <label htmlFor="password"className="block text-sm font-medium text-slate-700">Password</label>
+                <div className="flex justify-between">
+                    <label htmlFor="password"className="block text-sm font-medium text-slate-700">Password</label>
+                    <button type="button" onClick={() => setMode('reset')} className="text-xs font-medium text-primary hover:underline">Forgot Password?</button>
+                </div>
                 <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 block w-full bg-slate-200 border-0 p-3 rounded-md shadow-digital-inset focus:ring-2 focus:ring-primary-400" required placeholder="password123" />
               </div>
               {error && <p className="text-sm text-red-600 text-center">{error}</p>}
@@ -355,14 +408,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwit
                   </button>
               )}
             </div>
-             <div className="mt-6 text-center text-sm">
-                <p className="text-slate-600">
-                    Don't have an account?{' '}
-                    <button onClick={onSwitchToCreateAccount} className="font-medium text-primary hover:underline">
-                        Create an account
-                    </button>
-                </p>
-            </div>
           </>
         );
     }
@@ -373,7 +418,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin, onSwit
       <div className="bg-slate-200 rounded-2xl shadow-digital p-8 w-full max-w-sm m-4 relative transform transition-all duration-300 scale-100 animate-fade-in-up">
         {renderContent()}
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>

@@ -227,3 +227,22 @@ export const generateDepositConfirmationEmail = (userName: string, amount: numbe
 export const generateDepositConfirmationSms = (amount: number, cardLastFour: string): string => {
   return `ApexBank: A deposit of ${amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} from card **** ${cardLastFour} was successful. Your funds are now available.`;
 };
+
+export const generateTaskReminderEmail = (userName: string, taskText: string, dueDate: Date): { subject: string, body: string } => {
+  const subject = `Task Reminder: "${taskText}" is due today!`;
+  const body = `
+    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #0052FF;">Task Due Today!</h2>
+        <p>Hi ${userName},</p>
+        <p>This is a friendly reminder that the following task is due today, ${dueDate.toLocaleDateString()}:</p>
+        <p style="font-weight: bold; font-size: 1.1em;">"${taskText}"</p>
+        <p>You can view and manage your tasks by logging into your ApexBank account.</p>
+        <p>Stay productive,<br/>The ApexBank Team</p>
+    </div>
+  `;
+  return { subject, body: body.trim() };
+};
+
+export const generateTaskReminderSms = (taskText: string): string => {
+  return `ApexBank Reminder: Your task "${taskText}" is due today.`;
+};

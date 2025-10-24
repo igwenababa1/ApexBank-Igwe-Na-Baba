@@ -1,5 +1,7 @@
+
+
 import { GoogleGenAI, Type, GenerateContentResponse, Chat } from "@google/genai";
-import { NewsArticle, InsuranceProduct, LoanProduct, SystemUpdate, AccountType, VerificationLevel } from '../types';
+import { NewsArticle, InsuranceProduct, LoanProduct, SystemUpdate, AccountType, VerificationLevel, AdvisorResponse } from '../types';
 
 // FIX: Conditionally initialize the Gemini AI client only if an API key is available.
 // This prevents a runtime error if process.env.API_KEY is undefined and ensures
@@ -43,12 +45,28 @@ export const getCountryBankingTip = async (countryName: string): Promise<Banking
       contents: `Provide a very short, one-sentence tip for sending money to a bank account in ${countryName}. For example, for Germany mention IBAN, for the UK mention Sort Code. Be concise and helpful.`,
       config: {
         temperature: 0.2,
-        maxOutputTokens: 50,
-        thinkingConfig: { thinkingBudget: 0 }
+        // FIX: Removed maxOutputTokens to prevent MAX_TOKENS finishReason with gemini-2.5-flash.
+        // The prompt is specific enough to keep the response concise.
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            tip: {
+              type: Type.STRING,
+              description: `A short, one-sentence banking tip for sending money to ${countryName}.`
+            }
+          }
+        }
       }
     });
     
-    const result: BankingTipResult = { tip: response.text, isError: false };
+    const responseText = response?.text;
+    if (!responseText || responseText.trim() === '') {
+        console.error("Gemini API returned an empty response for getCountryBankingTip. Full response:", JSON.stringify(response));
+        throw new Error('Received empty or invalid response from Gemini API.');
+    }
+    const parsedJson = JSON.parse(responseText.trim());
+    const result: BankingTipResult = { tip: parsedJson.tip, isError: false };
     // Cache the successful response.
     tipCache.set(countryName, result);
     return result;
@@ -72,62 +90,6 @@ export const getCountryBankingTip = async (countryName: string): Promise<Banking
     return errorResult;
   }
 };
-
-export interface BankIntroNoteResult {
-  note: string;
-  isError: boolean;
-}
-
-// FIX: Create a dedicated cache for the intro note to improve clarity and avoid potential conflicts.
-const introNoteCache = new Map<string, BankIntroNoteResult>();
-const introNoteCacheKey = 'bankIntroNote';
-
-export const getBankIntroNote = async (): Promise<BankIntroNoteResult> => {
-  if (introNoteCache.has(introNoteCacheKey)) {
-    return introNoteCache.get(introNoteCacheKey)!;
-  }
-
-  if (!ai) {
-    const fallbackNote = "Experience the future of global finance. ApexBank offers seamless international transfers with unparalleled speed, transparency, and bank-grade security, empowering you to move money with confidence.";
-    const result: BankIntroNoteResult = { note: fallbackNote, isError: false };
-    introNoteCache.set(introNoteCacheKey, result);
-    return result;
-  }
-
-  try {
-    const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: "You are the AI strategist for ApexBank, a modern fintech specializing in fast, secure, and transparent international money transfers. Write a short, intelligent, and welcoming note (2-3 sentences) for our landing page. The note should highlight why a user should choose us. Mention key themes like global reach, speed, and bank-grade security without using a boring list. The tone should be confident, modern, and inspiring.",
-      config: {
-        temperature: 0.5,
-        maxOutputTokens: 100,
-      }
-    });
-    
-    const result: BankIntroNoteResult = { note: response.text, isError: false };
-    introNoteCache.set(introNoteCacheKey, result);
-    return result;
-  } catch (error) {
-    const errorString = JSON.stringify(error);
-    const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
-
-    if (!isRateLimitError) {
-      console.error("Error fetching bank intro note from Gemini:", error);
-    }
-    
-    let note: string;
-    if (isRateLimitError) {
-        note = "Our AI is currently experiencing high demand. In the meantime, experience the future of global finance with ApexBank's seamless international transfers, offering unparalleled speed and bank-grade security.";
-    } else {
-        note = `We're currently experiencing high traffic. Our mission is to provide seamless global finance with top-tier security. We invite you to explore how.`;
-    }
-    const errorResult: BankIntroNoteResult = { note, isError: true };
-    // Cache all errors to prevent repeated calls during a session.
-    introNoteCache.set(introNoteCacheKey, errorResult);
-    return errorResult;
-  }
-};
-
 
 export interface FinancialNewsResult {
   articles: NewsArticle[];
@@ -158,17 +120,45 @@ export const getFinancialNews = async (): Promise<FinancialNewsResult> => {
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: "Generate 3 synthetic, brief financial news headlines and summaries relevant to international finance and currency exchange. For each, provide a title, a short summary (1-2 sentences), and a category like 'Market Analysis', 'Currency Update', or 'Economic Outlook'. Return ONLY a valid JSON array of objects, with no surrounding text or markdown formatting. The format should be exactly: [{\"title\": \"...\", \"summary\": \"...\", \"category\": \"...\"}, ...].",
+      contents: "Generate 3 synthetic, brief financial news headlines and summaries relevant to international finance and currency exchange. For each, provide a title, a short summary (1-2 sentences), and a category like 'Market Analysis', 'Currency Update', or 'Economic Outlook'.",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+                articles: {
+                    type: Type.ARRAY,
+                    description: "A list of three financial news articles.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: {
+                                type: Type.STRING,
+                                description: "The headline of the news article."
+                            },
+                            summary: {
+                                type: Type.STRING,
+                                description: "A one or two sentence summary of the article."
+                            },
+                            category: {
+                                type: Type.STRING,
+                                description: "The category of the news, e.g., 'Market Analysis'."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      }
     });
-
-    let jsonString = response.text.trim();
-    if (jsonString.startsWith('```json')) {
-      jsonString = jsonString.substring(7, jsonString.length - 3).trim();
-    } else if (jsonString.startsWith('```')) {
-      jsonString = jsonString.substring(3, jsonString.length - 3).trim();
-    }
     
-    const articles = JSON.parse(jsonString);
+    const responseText = response?.text;
+    if (!responseText || responseText.trim() === '') {
+        console.error("Gemini API returned an empty response for getFinancialNews. Full response:", JSON.stringify(response));
+        throw new Error('Received empty or invalid response from Gemini API.');
+    }
+    const parsedJson = JSON.parse(responseText.trim());
+    const articles = parsedJson.articles;
     const result = { articles, isError: false };
     newsCache.set(newsCacheKey, result);
     return result;
@@ -240,7 +230,7 @@ export const getInsuranceProductDetails = async (productName: string): Promise<{
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Generate a compelling marketing description and exactly 3 key benefits for a financial insurance product called "${productName}" offered by a fintech bank. The tone should be professional, reassuring, and modern.`,
+      contents: `Generate a compelling marketing description and exactly 3 key benefits for a financial insurance product called "${productName}" offered by a fintech, ApexBank. The tone should be professional, reassuring, and modern.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -260,7 +250,12 @@ export const getInsuranceProductDetails = async (productName: string): Promise<{
       }
     });
     
-    const parsedJson = JSON.parse(response.text);
+    const responseText = response?.text;
+    if (!responseText || responseText.trim() === '') {
+        console.error("Gemini API returned an empty response for getInsuranceProductDetails. Full response:", JSON.stringify(response));
+        throw new Error('Received empty or invalid response from Gemini API.');
+    }
+    const parsedJson = JSON.parse(responseText.trim());
     const product: InsuranceProduct = {
         name: productName,
         description: parsedJson.description,
@@ -320,7 +315,7 @@ export const getLoanProducts = async (): Promise<{ products: LoanProduct[]; isEr
     try {
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `You are a financial product manager for a modern fintech bank. Generate details for three distinct loan products: a Personal Loan, an Auto Loan, and a Home Mortgage. For each product, provide a unique id (personal, auto, mortgage), a compelling one-paragraph marketing description, a list of exactly three key benefits, and a realistic min/max interest rate range. The tone should be professional, empowering, and clear.`,
+            contents: `You are a financial product manager for a modern fintech, ApexBank. Generate details for three distinct loan products: a Personal Loan, an Auto Loan, and a Home Mortgage. For each product, provide a unique id (personal, auto, mortgage), a compelling one-paragraph marketing description, a list of exactly three key benefits, and a realistic min/max interest rate range. The tone should be professional, empowering, and clear.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -344,7 +339,12 @@ export const getLoanProducts = async (): Promise<{ products: LoanProduct[]; isEr
             }
         });
         
-        const parsedJson = JSON.parse(response.text);
+        const responseText = response?.text;
+        if (!responseText || responseText.trim() === '') {
+            console.error("Gemini API returned an empty response for getLoanProducts. Full response:", JSON.stringify(response));
+            throw new Error('Received empty or invalid response from Gemini API.');
+        }
+        const parsedJson = JSON.parse(responseText.trim());
         const result = { products: parsedJson.loanProducts, isError: false };
         loanCache.set(cacheKey, result);
         return result;
@@ -379,10 +379,31 @@ export const getSupportAnswer = async (query: string): Promise<{ answer: string;
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `You are a friendly and helpful customer support AI for ApexBank. A customer has asked the following question: "${query}". Provide a clear, concise, and helpful answer. Use formatting like bolding for key terms and bullet points for lists if it makes the answer easier to understand. Do not invent features that don't exist. Be professional and reassuring.`,
-      config: { temperature: 0.3, maxOutputTokens: 250 }
+      contents: `You are a friendly and helpful customer support AI for ApexBank. A customer has asked the following question: "${query}". Provide a clear, concise, and helpful answer. Use Markdown for formatting like bolding for key terms and bullet points for lists if it makes the answer easier to understand. Do not invent features that don't exist. Be professional and reassuring.`,
+      config: { 
+        temperature: 0.3, 
+        maxOutputTokens: 250,
+        // FIX: Added thinkingConfig to reserve tokens for the output, preventing MAX_TOKENS errors on gemini-2.5-flash.
+        thinkingConfig: { thinkingBudget: 100 },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            answer: {
+              type: Type.STRING,
+              description: 'A helpful answer to the user query, formatted with Markdown.'
+            }
+          }
+        }
+      }
     });
-    const result = { answer: response.text, isError: false };
+    const responseText = response?.text;
+    if (!responseText || responseText.trim() === '') {
+        console.error("Gemini API returned an empty response for getSupportAnswer. Full response:", JSON.stringify(response));
+        throw new Error('Received empty or invalid response from Gemini API.');
+    }
+    const parsedJson = JSON.parse(responseText.trim());
+    const result = { answer: parsedJson.answer, isError: false };
     supportCache.set(query, result);
     return result;
   } catch (error) {
@@ -417,7 +438,7 @@ export const getSystemUpdates = async (): Promise<{ updates: SystemUpdate[]; isE
     if (!ai) {
         const fallbackUpdates: SystemUpdate[] = [
             { id: '1', title: 'Mobile App Update v2.1', date: new Date(Date.now() - 86400000 * 2).toISOString(), description: 'The latest version of our mobile app with performance improvements and a new dark mode is now available on the App Store and Google Play.', category: 'Improvement' },
-            { id: '2', title: 'Instant Card Provisioning', date: new Date(Date.now() - 86400000 * 7).toISOString(), description: 'You can now instantly provision your ApexBank card to Apple Pay and Google Wallet right from the app.', category: 'New Feature' },
+            { id: '2', title: 'Instant Card Provisioning', date: new Date(Date.now() - 86400000 * 7).toISOString(), description: 'You can now instantly provision your ICU card to Apple Pay and Google Wallet right from the app.', category: 'New Feature' },
             { id: '3', title: 'Scheduled Maintenance', date: new Date(Date.now() - 86400000 * 14).toISOString(), description: 'We will be undergoing scheduled maintenance this Saturday at 11 PM UTC to improve our infrastructure. The app may be temporarily unavailable.', category: 'Maintenance' },
         ];
         const result = { updates: fallbackUpdates, isError: false };
@@ -457,7 +478,12 @@ export const getSystemUpdates = async (): Promise<{ updates: SystemUpdate[]; isE
             }
         });
 
-        const parsedJson = JSON.parse(response.text);
+        const responseText = response?.text;
+        if (!responseText || responseText.trim() === '') {
+            console.error("Gemini API returned an empty response for getSystemUpdates. Full response:", JSON.stringify(response));
+            throw new Error('Received empty or invalid response from Gemini API.');
+        }
+        const parsedJson = JSON.parse(responseText.trim());
         const result = { updates: parsedJson.updates, isError: false };
         updatesCache.set(updatesCacheKey, result);
         return result;
@@ -471,34 +497,19 @@ export const getSystemUpdates = async (): Promise<{ updates: SystemUpdate[]; isE
         
         // The UI handles an empty updates array correctly by showing an error message.
         const errorResult = { updates: [], isError: true };
-        // Cache all errors to prevent repeated calls during a session.
         updatesCache.set(updatesCacheKey, errorResult);
         return errorResult;
     }
 };
 
-const accountPerksCache = new Map<string, { perks: string[]; isError: boolean }>();
-
-export const getAccountPerks = async (accountType: AccountType, verificationLevel: VerificationLevel): Promise<{ perks: string[]; isError: boolean }> => {
-    const cacheKey = `${accountType}-${verificationLevel}`;
-    if (accountPerksCache.has(cacheKey)) {
-        return accountPerksCache.get(cacheKey)!;
-    }
-    
+export const getAccountPerks = async (accountType: AccountType, verificationLevel: VerificationLevel): Promise<{ perks: string[], isError: boolean }> => {
     if (!ai) {
-        const fallbackPerks: { [key in AccountType]?: string[] } = {
-            [AccountType.CHECKING]: ['Real-time fraud monitoring', 'Customizable spending alerts', 'FDIC insured up to $250,000'],
-            [AccountType.SAVINGS]: ['High-yield interest rate', 'Secure vault for long-term savings', 'Automated goal tracking'],
-            [AccountType.BUSINESS]: ['Multi-user access controls', 'Advanced transaction categorization', 'Integration with accounting software'],
-        };
-        const perks = fallbackPerks[accountType] || ['Enhanced security features', '24/7 customer support'];
-        return { perks, isError: false };
+        return { perks: ["Enhanced fraud monitoring.", "Priority customer support queue.", "Higher transaction limits upon request."], isError: false };
     }
-
     try {
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `As a banking security expert, generate a list of exactly 3 compelling, modern security perks for a "${accountType}" account for a customer who is at "${verificationLevel}" verification status. The verification levels are: 'Unverified', 'Level 1: SSN Verified', 'Level 2: Document Verified', 'Level 3: Liveness Verified'. Higher verification levels should unlock more advanced perks. For example, a 'Liveness Verified' user might get enhanced insurance or proactive monitoring. The tone should be reassuring and professional.`,
+            contents: `Generate exactly 3 compelling, security-focused account perks for a user with a "${accountType}" account who has achieved "${verificationLevel}" status.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -506,65 +517,90 @@ export const getAccountPerks = async (accountType: AccountType, verificationLeve
                     properties: {
                         perks: {
                             type: Type.ARRAY,
-                            description: 'A list of exactly three key security perks.',
+                            description: 'A list of exactly three security-focused perks.',
                             items: { type: Type.STRING }
                         }
                     }
                 }
             }
         });
-        const parsedJson = JSON.parse(response.text);
-        const result = { perks: parsedJson.perks, isError: false };
-        accountPerksCache.set(cacheKey, result);
-        return result;
-
-    } catch (error) {
-        const errorString = JSON.stringify(error);
-        const isRateLimitError = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
-        
-        if (!isRateLimitError) {
-            console.error("Error fetching account perks from Gemini:", error);
+        const responseText = response?.text;
+        if (!responseText || responseText.trim() === '') {
+            console.error("Gemini API returned an empty response for getAccountPerks. Full response:", JSON.stringify(response));
+            throw new Error('Received empty or invalid response from Gemini API.');
         }
+        const parsedJson = JSON.parse(responseText.trim());
+        return { perks: parsedJson.perks, isError: false };
+    } catch (error) {
+        console.error("Error fetching account perks from Gemini:", error);
+        return { perks: [], isError: true };
+    }
+}
 
-        // The UI handles an empty perks array correctly by showing an error message.
-        const errorResult = { perks: [], isError: true };
-        // Cache all errors to prevent repeated calls during a session.
-        accountPerksCache.set(cacheKey, errorResult);
-        return errorResult;
+export const getFinancialAnalysis = async (financialData: string): Promise<{ analysis: AdvisorResponse | null, isError: boolean }> => {
+    if (!ai) {
+        return { analysis: null, isError: true };
+    }
+    try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Analyze the following user financial data: ${financialData}. Provide a concise 'overallSummary' (2-3 sentences), a 'financialScore' from 0-100, an array of 2 'insights', and an array of 2 'recommendations'.`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        overallSummary: { type: Type.STRING },
+                        financialScore: { type: Type.INTEGER },
+                        insights: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { category: { type: Type.STRING }, insight: { type: Type.STRING }, priority: { type: Type.STRING, enum: ['high', 'medium', 'low'] } } } },
+                        recommendations: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { productType: { type: Type.STRING, enum: ['loan', 'savings_account', 'insurance', 'credit_card'] }, reason: { type: Type.STRING }, suggestedAction: { type: Type.STRING }, linkTo: { type: Type.STRING } } } }
+                    }
+                }
+            }
+        });
+        const responseText = response?.text;
+        if (!responseText || responseText.trim() === '') {
+            console.error("Gemini API returned an empty response for getFinancialAnalysis. Full response:", JSON.stringify(response));
+            throw new Error('Received empty or invalid response from Gemini API.');
+        }
+        const analysis = JSON.parse(responseText.trim()) as AdvisorResponse;
+        return { analysis, isError: false };
+    } catch (error) {
+        console.error("Error fetching financial analysis from Gemini:", error);
+        return { analysis: null, isError: true };
     }
 };
 
-const createMockChat = () => ({
-  async *sendMessageStream(params: { message: string }) {
-    const responseText = "I'm currently operating in a simulated mode as the AI service is unavailable. I can provide answers to some common questions. How can I help you?";
-    const chunks = responseText.split(' ');
-    for (const chunk of chunks) {
-      await new Promise(res => setTimeout(res, 50 + Math.random() * 50));
-      yield { text: chunk + ' ' } as GenerateContentResponse;
+let chat: Chat | null = null;
+export const startChatSession = () => {
+    if (!ai) {
+        // A mock chat for when the API key is not available.
+        return {
+            async sendMessageStream(request: { message: string }) {
+                const message = request.message.toLowerCase();
+                let reply = "I am a mock AI assistant. How can I help you today?";
+                if(message.includes('hello')) reply = "Hello there!";
+                if(message.includes('balance')) reply = "You can view your account balance on the Dashboard.";
+                
+                // Simulate a stream
+                const stream = (async function* () {
+                    for (const char of reply) {
+                        yield { text: char };
+                        await new Promise(res => setTimeout(res, 20));
+                    }
+                })();
+                return stream;
+            }
+        };
     }
-  },
-});
 
-export const startChatSession = (): Chat | ReturnType<typeof createMockChat> => {
-  if (!ai) {
-    console.log("Using mock chat session.");
-    return createMockChat();
-  }
-
-  console.log("Initializing new Gemini chat session.");
-  const chat = ai.chats.create({
-    model: 'gemini-2.5-flash',
-    config: {
-      systemInstruction: `You are a friendly and helpful customer support AI for ApexBank, a modern fintech specializing in fast, secure, and transparent international money transfers. 
-      Your goal is to provide clear, concise, and accurate information. 
-      - Be professional and reassuring.
-      - Do not invent features or provide financial advice.
-      - If you don't know an answer, say so and suggest contacting human support through the 'Support' or 'Contact Us' page.
-      - Keep your answers relatively short and easy to understand.
-      - Use formatting like bolding for key terms and bullet points for lists when it makes the answer easier to read.
-      - When asked about a feature, you can assume the bank has: international transfers, virtual & physical cards (Visa/Mastercard), crypto trading (BTC, ETH), loans, insurance, and bill pay services.`,
-    },
-  });
-
-  return chat;
+    if (!chat) {
+        chat = ai.chats.create({
+            model: 'gemini-2.5-flash',
+            config: {
+                systemInstruction: "You are a friendly and professional banking assistant for ApexBank. Be concise and helpful. Do not invent features. Guide users to existing sections of the app like 'Dashboard', 'Cards', or 'Security'."
+            }
+        });
+    }
+    return chat;
 };

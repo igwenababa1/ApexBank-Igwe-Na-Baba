@@ -1,5 +1,7 @@
-import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, Task, Airport, FlightBooking, UtilityBiller, UtilityBill, UtilityType } from './types';
-import { BtcIcon, EthIcon, ApxIcon, LightningBoltIcon, FireIcon, WaterDropIcon, WifiIcon } from './components/Icons';
+
+
+import { Country, Recipient, Transaction, TransactionStatus, Card, CardTransaction, TransferLimits, Account, AccountType, CryptoAsset, CryptoHolding, SubscriptionService, SubscriptionServiceType, AppleCardDetails, AppleCardTransaction, SpendingCategory, TravelPlan, TravelPlanStatus, SecuritySettings, TrustedDevice, UserProfile, PlatformSettings, PlatformTheme, Task, Airport, FlightBooking, UtilityBiller, UtilityBill, UtilityType, AtmLocation } from './types';
+import { BtcIcon, EthIcon, ShellIcon, LightningBoltIcon, FireIcon, WaterDropIcon, WifiIcon } from './components/Icons';
 
 export const SUPPORTED_COUNTRIES: Country[] = [
   { code: 'US', name: 'United States', currency: 'USD' },
@@ -18,6 +20,7 @@ export const TRANSFER_PURPOSES: string[] = [
     'Investment',
     'Personal Expenses',
     'Loan Repayment',
+    'Pay by Check',
     'Other',
 ];
 
@@ -48,6 +51,10 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
     bankName: 'Chase Bank',
     accountNumber: '**** **** **** 1234',
     country: SUPPORTED_COUNTRIES[0],
+    streetAddress: '123 Main St',
+    city: 'New York',
+    stateProvince: 'NY',
+    postalCode: '10001',
     deliveryOptions: {
       bankDeposit: true,
       cardDeposit: true,
@@ -56,15 +63,20 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
     realDetails: {
       accountNumber: '9876543210981234',
       swiftBic: 'CHASUS33',
-    }
+    },
+    recipientType: 'bank',
   },
   {
     id: 'rec_2',
     fullName: 'John Smith',
     nickname: 'London Office Rent',
-    bankName: 'Bank of America',
+    bankName: 'HSBC',
     accountNumber: '**** **** **** 5678',
     country: SUPPORTED_COUNTRIES[1],
+    streetAddress: '10 Downing Street',
+    city: 'London',
+    stateProvince: '',
+    postalCode: 'SW1A 2AA',
     deliveryOptions: {
       bankDeposit: true,
       cardDeposit: false,
@@ -72,8 +84,9 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
     },
     realDetails: {
       accountNumber: '1234567890125678',
-      swiftBic: 'BOFAGB22',
-    }
+      swiftBic: 'MIDLGB22',
+    },
+    recipientType: 'bank',
   },
   {
     id: 'rec_3',
@@ -82,6 +95,10 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
     bankName: 'Wells Fargo',
     accountNumber: '**** **** **** 9012',
     country: SUPPORTED_COUNTRIES[0],
+    streetAddress: '456 Market St',
+    city: 'San Francisco',
+    stateProvince: 'CA',
+    postalCode: '94105',
     deliveryOptions: {
         bankDeposit: true,
         cardDeposit: true,
@@ -90,16 +107,21 @@ export const INITIAL_RECIPIENTS: Recipient[] = [
     realDetails: {
         accountNumber: '5432109876549012',
         swiftBic: 'WFBIUS6S',
-    }
+    },
+    recipientType: 'bank',
   }
 ];
 
 export const SELF_RECIPIENT: Recipient = {
   id: 'self_0',
-  fullName: 'Eleanor Vance',
+  fullName: 'Randy M. Chitwood',
   bankName: 'Card Deposit',
   accountNumber: '**** **** **** 8842', // User's own card/account
   country: SUPPORTED_COUNTRIES[0], // Assuming user is in the US for this
+  streetAddress: '3797 Yorkshire Circle',
+  city: 'Greenville',
+  stateProvince: 'NC',
+  postalCode: '27834',
   deliveryOptions: {
     bankDeposit: true,
     cardDeposit: true,
@@ -107,13 +129,14 @@ export const SELF_RECIPIENT: Recipient = {
   },
   realDetails: {
     accountNumber: '4242424242428842',
-    swiftBic: 'APEXUS33',
-  }
+    swiftBic: 'ICUUS33',
+  },
+  recipientType: 'bank',
 };
 
 
 export const INITIAL_ACCOUNTS: Account[] = [
-    { id: 'acc_checking_1', type: AccountType.CHECKING, nickname: 'Main Checking', accountNumber: '**** 1234', balance: 7500, features: ['International Transfers', 'Debit Card', 'FDIC Insured'] },
+    { id: 'acc_checking_1', type: AccountType.CHECKING, nickname: 'Main Checking', accountNumber: '**** 1234', balance: 1978620.38, features: ['International Transfers', 'Debit Card', 'FDIC Insured'] },
     { id: 'acc_savings_1', type: AccountType.SAVINGS, nickname: 'Emergency Fund', accountNumber: '**** 5678', balance: 2500, features: ['4.5% APY', 'Goal Setting', 'Automated Savings'] },
     { id: 'acc_business_1', type: AccountType.BUSINESS, accountNumber: '**** 9012', balance: 0, features: ['Multi-user Access', 'Invoicing Tools', 'Expense Tracking'] },
 ];
@@ -140,6 +163,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     description: "Payment for services",
     type: 'debit',
     purpose: 'Payment for Services',
+    reviewed: true,
   },
   {
     id: `txn_${now.getTime() - 3600000}`,
@@ -159,6 +183,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     description: "Family support",
     type: 'debit',
     purpose: 'Family Support',
+    reviewed: false,
   },
   {
     id: `txn_${now.getTime() - 86400000 * 5}`,
@@ -177,6 +202,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     description: "Initial Deposit",
     type: 'credit',
     purpose: 'Account Deposit',
+    reviewed: false,
   },
   {
     id: `txn_${now.getTime() - 86400000 * 10}`,
@@ -198,10 +224,11 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     chequeDetails: {
       chequeNumber: '1234',
       images: {
-        front: 'https://placehold.co/800x333/E2E8F0/475569?text=Front+of+Check%0A%0APay+to+the+order+of+Eleanor+Vance%0A%0A%241,250.75',
+        front: 'https://placehold.co/800x333/E2E8F0/475569?text=Front+of+Check%0A%0APay+to+the+order+of+Randy+M.+Chitwood%0A%0A%241,250.75',
         back: 'https://placehold.co/800x333/E2E8F0/475569?text=Back+of+Check%0A%0AEndorse+Here',
       }
-    }
+    },
+    reviewed: false,
   },
 ];
 
@@ -219,7 +246,7 @@ export const INITIAL_CARDS: Card[] = [
     {
         id: 'card_1',
         lastFour: '8842',
-        cardholderName: 'Eleanor Vance',
+        cardholderName: 'Randy M. Chitwood',
         expiryDate: '12/28',
         fullNumber: '4242 4242 4242 8842',
         cvc: '123',
@@ -229,7 +256,7 @@ export const INITIAL_CARDS: Card[] = [
     {
         id: 'card_2',
         lastFour: '5555',
-        cardholderName: 'Eleanor Vance',
+        cardholderName: 'Randy M. Chitwood',
         expiryDate: '06/29',
         fullNumber: '5555 5555 5555 5555',
         cvc: '456',
@@ -251,6 +278,7 @@ export const INITIAL_TRANSFER_LIMITS: TransferLimits = {
 };
 
 export const USER_PIN = '1234';
+export const USER_PASSWORD = 'password123';
 export const NETWORK_AUTH_CODE = '987654';
 
 // --- Crypto Constants ---
@@ -289,10 +317,10 @@ export const INITIAL_CRYPTO_ASSETS: CryptoAsset[] = [
         priceHistory: generatePriceHistory(3550.12, 50, 0.015),
     },
     {
-        id: 'apx',
-        name: 'ApexCoin',
-        symbol: 'APX',
-        icon: ApxIcon,
+        id: 'shl',
+        name: 'ShellCoin',
+        symbol: 'SHL',
+        icon: ShellIcon,
         price: 1.25,
         change24h: 5.78,
         marketCap: 1250000000,
@@ -387,9 +415,10 @@ export const INITIAL_TRUSTED_DEVICES: TrustedDevice[] = [
 
 // --- User Profile ---
 export const USER_PROFILE: UserProfile = {
-  name: 'Eleanor Vance',
-  email: 'eleanor.vance@apexbank.com',
-  profilePictureUrl: 'https://i.pravatar.cc/150?u=eleanor-vance',
+  name: 'Randy M. Chitwood',
+// FIX: Replaced "ishellcu.com" with "apexbank.com" for brand consistency.
+  email: 'randy.m.chitwood@apexbank.com',
+  profilePictureUrl: 'data:image/jpeg;base64,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';,
   lastLogin: {
     date: new Date(Date.now() - 86400000 * 2), // 2 days ago
     from: 'New York, NY',
@@ -443,10 +472,11 @@ export const THEME_COLORS: { [key in PlatformTheme]: { [key: string]: string } }
 
 // --- Task Management Constants ---
 export const INITIAL_TASKS: Task[] = [
-  { id: 'task_1', text: 'Pay Q3 estimated taxes', completed: false, dueDate: new Date(new Date().setDate(new Date().getDate() + 10)) },
-  { id: 'task_2', text: 'Review monthly budget with financial advisor', completed: false, dueDate: new Date(new Date().setDate(new Date().getDate() - 2)) },
-  { id: 'task_3', text: 'Set up recurring transfer for rent', completed: false },
-  { id: 'task_4', text: 'File expense reports for June', completed: true, dueDate: new Date(new Date().setDate(new Date().getDate() - 15)) },
+  { id: 'task_1', text: 'Pay Q3 estimated taxes', completed: false, dueDate: new Date(new Date().setDate(new Date().getDate() + 10)), notificationSent: false },
+  { id: 'task_2', text: 'Review monthly budget with financial advisor', completed: false, dueDate: new Date(new Date().setDate(new Date().getDate() - 2)), notificationSent: false },
+  { id: 'task_3', text: 'Set up recurring transfer for rent', completed: false, notificationSent: false },
+  { id: 'task_4', text: 'File expense reports for June', completed: true, dueDate: new Date(new Date().setDate(new Date().getDate() - 15)), notificationSent: false },
+  { id: 'task_5', text: 'Submit weekly expense report', completed: false, dueDate: new Date(), notificationSent: false },
 ];
 
 // --- Flight Booking Constants ---
@@ -475,4 +505,14 @@ export const INITIAL_UTILITY_BILLS: UtilityBill[] = [
     { id: 'bill_2', billerId: 'util_2', amount: 78.20, dueDate: new Date(now.getTime() + 86400000 * 12), isPaid: false },
     { id: 'bill_3', billerId: 'util_3', amount: 65.00, dueDate: new Date(now.getTime() - 86400000 * 5), isPaid: true },
     { id: 'bill_4', billerId: 'util_4', amount: 89.99, dueDate: new Date(now.getTime() + 86400000 * 15), isPaid: false },
+];
+
+export const ATM_LOCATIONS: AtmLocation[] = [
+  { id: 'atm1', name: 'ApexBank - Main Branch', address: '123 Wall Street', city: 'New York', state: 'NY', zip: '10005', network: 'ApexBank', lat: 40.7061, lng: -74.0089 },
+  { id: 'atm2', name: 'Allpoint at CVS', address: '500 Broadway', city: 'New York', state: 'NY', zip: '10012', network: 'Allpoint', lat: 40.7225, lng: -73.9984 },
+  { id: 'atm3', name: 'Visa Plus at 7-Eleven', address: '711 Times Square', city: 'New York', state: 'NY', zip: '10036', network: 'Visa Plus', lat: 40.7580, lng: -73.9855 },
+  { id: 'atm4', name: 'Cirrus ATM', address: 'Grand Central Terminal', city: 'New York', state: 'NY', zip: '10017', network: 'Cirrus', lat: 40.7527, lng: -73.9772 },
+  { id: 'atm5', name: 'ApexBank - Financial District', address: '555 California Street', city: 'San Francisco', state: 'CA', zip: '94104', network: 'ApexBank', lat: 37.7923, lng: -122.4042 },
+  { id: 'atm6', name: 'Allpoint at Target', address: '789 Mission Street', city: 'San Francisco', state: 'CA', zip: '94103', network: 'Allpoint', lat: 37.7808, lng: -122.4069 },
+  { id: 'atm7', name: 'Visa Plus ATM', address: 'Fisherman\'s Wharf, Pier 39', city: 'San Francisco', state: 'CA', zip: '94133', network: 'Visa Plus', lat: 37.8087, lng: -122.4098 },
 ];

@@ -1,7 +1,10 @@
+
+
 import React, { useState } from 'react';
 import { TravelPlan, TravelPlanStatus, Country } from '../types';
 import { SUPPORTED_COUNTRIES } from '../constants';
-import { CalendarDaysIcon, GlobeAmericasIcon, CheckBadgeIcon, PlusCircleIcon, MapPinIcon } from './Icons';
+// FIX: Replaced missing CheckBadgeIcon with existing VerifiedBadgeIcon.
+import { CalendarDaysIcon, GlobeAmericasIcon, VerifiedBadgeIcon, PlusCircleIcon, MapPinIcon } from './Icons';
 
 interface TravelCheckInProps {
     travelPlans: TravelPlan[];
@@ -25,7 +28,7 @@ const TravelPlanCard: React.FC<{ plan: TravelPlan }> = ({ plan }) => {
                 };
             case TravelPlanStatus.COMPLETED:
                 return {
-                    icon: <CheckBadgeIcon className="w-5 h-5 text-slate-500" />,
+                    icon: <VerifiedBadgeIcon className="w-5 h-5 text-slate-500" />,
                     style: "bg-slate-200 text-slate-600",
                     label: "Completed"
                 };

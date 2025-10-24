@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Transaction, TransactionStatus, Account, AccountType, Recipient, TravelPlan, TravelPlanStatus } from '../types';
-import { CheckCircleIcon, ClockIcon, EyeIcon, EyeSlashIcon, VerifiedBadgeIcon, DepositIcon, WithdrawIcon, ChevronLeftIcon, ChevronRightIcon, getBankIcon, ChartBarIcon, TrendingUpIcon, GlobeAmericasIcon } from './Icons';
+import { Transaction, TransactionStatus, Account, AccountType, Recipient, TravelPlan, TravelPlanStatus, BalanceDisplayMode } from '../types';
+import { CheckCircleIcon, ClockIcon, EyeIcon, EyeSlashIcon, VerifiedBadgeIcon, DepositIcon, WithdrawIcon, ChevronLeftIcon, ChevronRightIcon, getBankIcon, ChartBarIcon, TrendingUpIcon, GlobeAmericasIcon, MapPinIcon } from './Icons';
 import { CurrencyConverter } from './CurrencyConverter';
 import { FinancialNews } from './FinancialNews';
 import { QuickTransfer } from './QuickTransfer';
@@ -12,7 +12,10 @@ interface DashboardProps {
   recipients: Recipient[];
   createTransaction: (transaction: Omit<Transaction, 'id' | 'status' | 'estimatedArrival' | 'statusTimestamps' | 'type'>) => Transaction | null;
   cryptoPortfolioValue: number;
+  portfolioChange24h: number;
   travelPlans: TravelPlan[];
+  totalNetWorth: number;
+  balanceDisplayMode: BalanceDisplayMode;
 }
 
 const ActiveTravelNotice: React.FC<{ plans: TravelPlan[] }> = ({ plans }) => {
@@ -30,6 +33,34 @@ const ActiveTravelNotice: React.FC<{ plans: TravelPlan[] }> = ({ plans }) => {
                     </p>
                 </div>
             </div>
+        </div>
+    );
+};
+
+const RealTimeInfo: React.FC = () => {
+    const [dateTime, setDateTime] = useState(new Date());
+
+    useEffect(() => {
+        const timerId = setInterval(() => setDateTime(new Date()), 1000);
+        return () => clearInterval(timerId);
+    }, []);
+
+    const timeString = dateTime.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
+    const dateString = dateTime.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+    });
+
+    return (
+        <div className="mt-2 flex items-center justify-end space-x-2 text-slate-500">
+            <ClockIcon className="w-4 h-4" />
+            <p className="font-mono text-xs">
+                {timeString} &bull; {dateString}
+            </p>
         </div>
     );
 };
@@ -71,46 +102,79 @@ const TransactionRow: React.FC<{ transaction: Transaction }> = ({ transaction })
   );
 };
 
-const accountImages: { [key in AccountType]: string } = {
-    [AccountType.CHECKING]: 'https://images.unsplash.com/photo-1554224155-8d04421cd6e2?q=80&w=2072&auto=format&fit=crop',
-    [AccountType.SAVINGS]: 'https://images.unsplash.com/photo-1601597111158-2f8024208a96?q=80&w=2070&auto=format&fit=crop',
-    [AccountType.BUSINESS]: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop',
+const accountImages: { [key: string]: string } = {
+    'acc_checking_1': 'https://images.unsplash.com/photo-1554224155-1696413565d3?q=80&w=2070&auto=format&fit=crop',
+    'acc_savings_1': 'https://images.unsplash.com/photo-1593672715438-d88a706299a5?q=80&w=2070&auto=format&fit=crop',
+    'acc_business_1': 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop',
 };
 
 const AccountCarouselCard: React.FC<{ account: Account; isBalanceVisible: boolean; onViewDetails: () => void }> = ({ account, isBalanceVisible, onViewDetails }) => {
-    return (
-        <div className="relative w-full rounded-2xl shadow-lg overflow-hidden text-white" style={{ height: '220px' }}>
-            <img src={accountImages[account.type]} alt={account.type} className="absolute inset-0 w-full h-full object-cover"/>
-            <div className="absolute inset-0 bg-black/50"></div>
-            <div className="relative z-10 p-6 flex flex-col h-full">
-                <div>
-                    <h4 className="font-bold text-xl">{account.nickname || account.type}</h4>
-                    {account.nickname && <p className="text-sm opacity-80 -mt-1">{account.type}</p>}
-                    <p className="text-sm font-mono opacity-80">{account.accountNumber}</p>
-                </div>
-                <div className="flex-grow flex flex-col justify-center">
-                    <p className="text-sm opacity-80">Available Balance</p>
-                    <p className="text-4xl font-bold tracking-wider" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.4)' }}>
-                        {isBalanceVisible ? account.balance.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '$ ••••••••'}
-                    </p>
-                </div>
-                <button onClick={onViewDetails} className="self-start mt-auto text-xs font-bold bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-full transition-colors">
-                    View Account Details &rarr;
+    const cardContent = (
+      <>
+        {/* Gradient overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+        
+        <div className="relative z-10 p-6 flex flex-col h-full">
+            <div>
+                <h4 className="font-bold text-xl drop-shadow-md">{account.nickname || account.type}</h4>
+                <p className="text-sm font-mono opacity-80 drop-shadow-sm">{account.accountNumber}</p>
+            </div>
+            <div className="flex-grow flex flex-col justify-center">
+                <p className="text-sm opacity-80">Available Balance</p>
+                <p className="text-4xl font-bold tracking-wider" style={{ textShadow: '1px 1px 5px rgba(0,0,0,0.5)' }}>
+                    {isBalanceVisible ? account.balance.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '$ ••••••••'}
+                </p>
+            </div>
+            <div className="flex items-center justify-between">
+                {account.features[0] && (
+                    <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold">
+                       <VerifiedBadgeIcon className="w-4 h-4 text-green-300" />
+                       <span>{account.features[0]}</span>
+                    </div>
+                )}
+                <button onClick={onViewDetails} className="text-xs font-bold bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-full transition-colors">
+                    View Details &rarr;
                 </button>
             </div>
+        </div>
+      </>
+    );
+
+    // Special handling for Emergency Fund for the animated background effect
+    if (account.id === 'acc_savings_1') {
+        return (
+            <div className="group relative w-full rounded-2xl shadow-lg overflow-hidden text-white" style={{ height: '220px' }}>
+                <div 
+                    className="absolute inset-0 w-full h-full animate-background-zoom bg-center"
+                    style={{ backgroundImage: `url(${accountImages[account.id]})` }}
+                ></div>
+                {cardContent}
+            </div>
+        );
+    }
+
+    // Default card for other accounts
+    return (
+        <div className="group relative w-full rounded-2xl shadow-lg overflow-hidden text-white" style={{ height: '220px' }}>
+            <img 
+                src={accountImages[account.id]} 
+                alt={account.type} 
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+                loading="lazy"
+            />
+            {cardContent}
         </div>
     );
 };
 
 
-export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, setActiveView, recipients, createTransaction, cryptoPortfolioValue, travelPlans }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, setActiveView, recipients, createTransaction, cryptoPortfolioValue, portfolioChange24h, travelPlans, totalNetWorth, balanceDisplayMode }) => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  const totalNetWorth = totalBalance + cryptoPortfolioValue;
   const activeTravelPlans = travelPlans.filter(p => p.status === TravelPlanStatus.ACTIVE);
+  const isPortfolioChangePositive = portfolioChange24h >= 0;
 
   const toggleBalanceVisibility = () => {
     setIsBalanceVisible(!isBalanceVisible);
@@ -151,17 +215,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, se
       <ActiveTravelNotice plans={activeTravelPlans} />
 
       <div className="bg-slate-200 rounded-2xl p-6 shadow-digital">
-        <div className="flex justify-between items-start mb-6">
-            <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-6">
+            <div className="md:col-span-1">
               <div className="flex items-center space-x-2">
-                  <h3 className="text-2xl font-bold text-slate-800">Eleanor Vance</h3>
+                  <h3 className="text-2xl font-bold text-slate-800">Randy M. Chitwood</h3>
                   <VerifiedBadgeIcon className="w-6 h-6 text-blue-500" />
               </div>
               <p className="text-sm text-slate-500 mt-1">Welcome back to your financial dashboard.</p>
             </div>
-            <div className="text-right">
+            
+            <div className="md:col-span-1 text-right">
                 <div className="flex items-center space-x-2 justify-end">
-                  <h2 className="text-lg font-medium text-slate-500">Total Net Worth</h2>
+                  <h2 className="text-lg font-medium text-slate-500">
+                    {balanceDisplayMode === 'global' ? 'Total Global Net Worth' : 'Total Domestic Balance'}
+                  </h2>
                   <button 
                     onClick={toggleBalanceVisibility} 
                     className="text-slate-400 hover:text-slate-600 transition-colors" 
@@ -173,6 +240,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, se
                  <p className="text-3xl font-bold text-slate-800 mt-1 tracking-wider">
                   {isBalanceVisible ? totalNetWorth.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '$ ********'}
                 </p>
+                <RealTimeInfo />
             </div>
         </div>
         
@@ -198,20 +266,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, se
             </div>
 
             {/* Navigation Arrows */}
-            <button 
-                onClick={handlePrev} 
-                className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-sm transition-colors z-20"
-                aria-label="Previous account"
-            >
-                <ChevronLeftIcon className="w-6 h-6" />
-            </button>
-            <button 
-                onClick={handleNext} 
-                className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-sm transition-colors z-20"
-                aria-label="Next account"
-            >
-                <ChevronRightIcon className="w-6 h-6" />
-            </button>
+            {accounts.length > 1 && (
+              <>
+                <button 
+                    onClick={handlePrev} 
+                    className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-sm transition-colors z-20"
+                    aria-label="Previous account"
+                >
+                    <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+                <button 
+                    onClick={handleNext} 
+                    className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-sm transition-colors z-20"
+                    aria-label="Next account"
+                >
+                    <ChevronRightIcon className="w-6 h-6" />
+                </button>
+              </>
+            )}
             
              <div className="flex justify-center space-x-2 mt-4">
                 {accounts.map((_, index) => (
@@ -267,9 +339,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ accounts, transactions, se
                 <p className="text-3xl font-bold text-slate-800 mt-2">
                     {isBalanceVisible ? cryptoPortfolioValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '$ ********'}
                 </p>
-                 <div className="text-sm font-semibold flex items-center text-green-600 mt-1">
-                    <TrendingUpIcon className="w-4 h-4 mr-1"/>
-                    <span>+5.2% (24h)</span>
+                 <div className={`text-sm font-semibold flex items-center mt-1 ${isPortfolioChangePositive ? 'text-green-600' : 'text-red-600'}`}>
+                    <TrendingUpIcon className={`w-4 h-4 mr-1 transition-transform ${!isPortfolioChangePositive ? 'transform rotate-180' : ''}`}/>
+                    <span>{isPortfolioChangePositive ? '+' : ''}{portfolioChange24h.toFixed(2)}% (24h)</span>
                 </div>
                 <button 
                     onClick={() => setActiveView('crypto')}

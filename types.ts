@@ -1,7 +1,9 @@
 // FIX: Import React to make React types like `ComponentType` available in this file.
 import React from 'react';
 
-export type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform' | 'tasks' | 'flights' | 'utilities';
+export type View = 'dashboard' | 'send' | 'recipients' | 'history' | 'security' | 'cards' | 'insurance' | 'loans' | 'support' | 'accounts' | 'crypto' | 'services' | 'checkin' | 'platform' | 'tasks' | 'flights' | 'utilities' | 'integrations' | 'advisor' | 'invest' | 'atmLocator';
+
+export type BalanceDisplayMode = 'global' | 'domestic';
 
 export enum TransactionStatus {
   SUBMITTED = 'Submitted',
@@ -25,6 +27,7 @@ export enum NotificationType {
   SUBSCRIPTION = 'subscription',
   TRAVEL = 'travel',
   TASK = 'task',
+  INSURANCE = 'insurance',
 }
 
 export interface Notification {
@@ -59,10 +62,16 @@ export interface Recipient {
   fullName: string;
   nickname?: string;
   bankName: string;
-  accountNumber: string; // Masked account number for display
+  accountNumber: string; // Masked account number or service identifier for display
   country: Country;
+  streetAddress?: string;
+  city?: string;
+  stateProvince?: string;
+  postalCode?: string;
   deliveryOptions: DeliveryOptions;
   realDetails: RealAccountDetails;
+  recipientType?: 'bank' | 'service';
+  serviceName?: 'PayPal' | 'CashApp' | 'Zelle' | 'Western Union' | 'MoneyGram' | string;
 }
 
 
@@ -93,6 +102,7 @@ export interface Transaction {
       back: string;
     }
   }
+  reviewed?: boolean;
 }
 
 export interface Card {
@@ -327,6 +337,7 @@ export interface Task {
   text: string;
   completed: boolean;
   dueDate?: Date;
+  notificationSent?: boolean;
 }
 
 // Flight Booking
@@ -382,4 +393,37 @@ export interface UtilityBill {
     amount: number;
     dueDate: Date;
     isPaid: boolean;
+}
+
+// AI Financial Advisor
+export interface FinancialInsight {
+    category: string; // e.g., "Spending", "Savings"
+    insight: string; // e.g., "Your spending on 'Food & Drink' is 20% higher this month."
+    priority: 'high' | 'medium' | 'low';
+}
+
+export interface ProductRecommendation {
+    productType: 'loan' | 'savings_account' | 'insurance' | 'credit_card';
+    reason: string; // e.g., "Your high savings balance could be earning more in a High-Yield Savings account."
+    suggestedAction: string; // e.g., "Explore Savings Accounts"
+    linkTo: View;
+}
+
+export interface AdvisorResponse {
+    overallSummary: string;
+    financialScore: number; // A score from 0-100
+    insights: FinancialInsight[];
+    recommendations: ProductRecommendation[];
+}
+
+export interface AtmLocation {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  network: 'Allpoint' | 'Visa Plus' | 'Cirrus' | 'ApexBank';
+  lat: number;
+  lng: number;
 }

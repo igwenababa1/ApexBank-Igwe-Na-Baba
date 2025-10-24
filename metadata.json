@@ -1,7 +1,8 @@
 {
-  "name": "ApexBank",
-  "description": "A modern, trustworthy fintech web application for seamless international money transfers, featuring a real-time simulation of the transfer journey and a professional, multi-step user introduction.",
+  "name": "I-Shell Credit Union",
+  "description": "A top-notch fintech web application for I-Shell Credit Union (ICU), offering seamless international money transfers, KYC support, advanced security, and modern banking features.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "geolocation"
   ]
 }

@@ -1,3 +1,5 @@
+
+
 import React, { useMemo } from 'react';
 import { AppleCardTransaction, SpendingCategory, SpendingLimit, SPENDING_CATEGORIES } from '../types';
 

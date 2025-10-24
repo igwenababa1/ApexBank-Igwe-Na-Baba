@@ -1,6 +1,6 @@
 import React from 'react';
 import { Notification, NotificationType, View } from '../types';
-import { BellIcon, CheckCircleIcon, CreditCardIcon, ShieldCheckIcon } from './Icons';
+import { BellIcon, CheckCircleIcon, CreditCardIcon, ShieldCheckIcon, LifebuoyIcon, CashIcon } from './Icons';
 
 interface NotificationsPanelProps {
   notifications: Notification[];
@@ -16,6 +16,10 @@ const getNotificationIcon = (type: NotificationType) => {
             return <CreditCardIcon className="w-6 h-6 text-blue-500" />;
         case NotificationType.SECURITY:
             return <ShieldCheckIcon className="w-6 h-6 text-yellow-500" />;
+        case NotificationType.INSURANCE:
+            return <LifebuoyIcon className="w-6 h-6 text-indigo-500" />;
+        case NotificationType.LOAN:
+            return <CashIcon className="w-6 h-6 text-teal-500" />;
         default:
             return <BellIcon className="w-6 h-6 text-slate-500" />;
     }
